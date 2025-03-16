@@ -7,13 +7,6 @@ struct LockerLocation: Identifiable {
     let coordinate: CLLocationCoordinate2D
 }
 
-struct LockerSizeOption: Identifiable {
-    let id = UUID()
-    let name: String
-    let dimensions: String
-    let color: Color
-}
-
 struct LockerMapView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var region = MKCoordinateRegion(
@@ -23,12 +16,14 @@ struct LockerMapView: View {
     
     @State private var selectedLocation: LockerLocation?
     @State private var showingLockerDetails = false
+    @State private var selectedSize: LockerSize?
+    @State private var showConfirmation = false
     
-    let sizeOptions = [
-        LockerSizeOption(name: "Small", dimensions: "40x30x45 cm", color: .green),
-        LockerSizeOption(name: "Medium", dimensions: "70x50x60 cm", color: .blue),
-        LockerSizeOption(name: "Large", dimensions: "100x80x70 cm", color: .red)
-    ]
+    // For reservation flow
+    var reservationDates: Set<Date>?
+    var isReservationFlow: Bool {
+        reservationDates != nil
+    }
     
     // Sample locations - in a real app, these would come from a backend
     let locations = [
@@ -39,7 +34,7 @@ struct LockerMapView: View {
     
     var body: some View {
         ZStack {
-            // Map
+            // Map with annotations
             Map(coordinateRegion: $region, annotationItems: locations) { location in
                 MapAnnotation(coordinate: location.coordinate) {
                     Button(action: {
@@ -48,8 +43,9 @@ struct LockerMapView: View {
                     }) {
                         Image(systemName: "mappin.circle.fill")
                             .font(.system(size: 30))
-                            .foregroundColor(.primaryBlack)
+                            .foregroundColor(AppColors.primaryBlack)
                             .background(Circle().fill(.white))
+                            .shadow(radius: 5)
                     }
                 }
             }
@@ -63,7 +59,7 @@ struct LockerMapView: View {
                     }) {
                         Image(systemName: "arrow.left")
                             .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(.primaryBlack)
+                            .foregroundColor(AppColors.primaryBlack)
                             .frame(width: 40, height: 40)
                             .background(Color.white)
                             .clipShape(Circle())
@@ -72,7 +68,7 @@ struct LockerMapView: View {
                     
                     Spacer()
                     
-                    Text("Locker Shops Map")
+                    Text(isReservationFlow ? "Select Location" : "Locker Shops Map")
                         .font(.title3)
                         .fontWeight(.semibold)
                     
@@ -106,46 +102,56 @@ struct LockerMapView: View {
                         Text("Select Locker Size")
                             .font(.headline)
                         
-                        ForEach(sizeOptions) { option in
+                        ForEach(LockerSize.allCases, id: \.self) { size in
                             Button(action: {
-                                // Handle size selection
+                                selectedSize = size
                             }) {
                                 HStack {
                                     VStack(alignment: .leading) {
-                                        Text(option.name)
+                                        Text(size.rawValue)
                                             .font(.headline)
-                                        Text(option.dimensions)
+                                        Text(size.dimensions)
                                             .font(.subheadline)
                                             .foregroundColor(.gray)
                                     }
                                     
                                     Spacer()
                                     
-                                    Circle()
-                                        .fill(option.color)
-                                        .frame(width: 12, height: 12)
+                                    Text("$\(String(format: "%.2f", size.basePrice))")
+                                        .font(.headline)
+                                        .foregroundColor(AppColors.primaryBlack)
+                                    
+                                    if selectedSize == size {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundColor(AppColors.primaryYellow)
+                                    }
                                 }
                                 .padding()
                                 .background(Color.white)
                                 .cornerRadius(12)
                                 .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
                             }
-                            .foregroundColor(.black)
+                            .foregroundColor(AppColors.primaryBlack)
                         }
                     }
                     
                     // Rent Button
                     Button(action: {
-                        // Handle rent action
+                        if let location = selectedLocation, let size = selectedSize {
+                            showingLockerDetails = false
+                            showConfirmation = true
+                        }
                     }) {
-                        Text("Rent Your Locker")
+                        Text(isReservationFlow ? "Confirm Selection" : "Rent Your Locker")
                             .fontWeight(.bold)
-                            .foregroundColor(.primaryBlack)
+                            .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.primaryYellow)
+                            .background(selectedSize == nil ? Color.gray : AppColors.primaryBlack)
                             .cornerRadius(16)
+                            .opacity(selectedSize == nil ? 0.5 : 1)
                     }
+                    .disabled(selectedSize == nil)
                 }
                 .padding(24)
                 .background(Color.white)
@@ -156,11 +162,20 @@ struct LockerMapView: View {
                 .animation(.spring(), value: showingLockerDetails)
             }
         }
+        .fullScreenCover(isPresented: $showConfirmation) {
+            if let location = selectedLocation, let size = selectedSize {
+                LockerConfirmationView(rental: LockerRental(
+                    id: UUID().uuidString,
+                    shopName: location.name,
+                    size: size,
+                    rentalType: isReservationFlow ? .reservation : .instant,
+                    reservationDate: reservationDates?.first
+                ))
+            }
+        }
     }
 }
 
-struct LockerMapView_Previews: PreviewProvider {
-    static var previews: some View {
-        LockerMapView()
-    }
-} 
+#Preview {
+    LockerMapView()
+}

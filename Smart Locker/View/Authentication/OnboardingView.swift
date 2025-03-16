@@ -75,7 +75,7 @@ struct OnboardingView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.primaryBlack)
+                        .background(Color.black)
                         .cornerRadius(12)
                 }
                 .padding(.horizontal, 20)

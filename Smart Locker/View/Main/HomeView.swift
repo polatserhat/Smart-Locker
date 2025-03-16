@@ -20,7 +20,7 @@ struct CategoryButton: View {
             .padding(.vertical, 12)
             .background(
                 Capsule()
-                    .fill(isSelected ? Color.primaryYellow : Color.secondaryGray)
+                    .fill(isSelected ? AppColors.primaryYellow : Color.gray)
             )
         }
     }
@@ -29,6 +29,7 @@ struct CategoryButton: View {
 struct HomeView: View {
     @State private var selectedCategory = 0
     @State private var showLockerMap = false
+    @State private var showReservation = false
     
     var body: some View {
         NavigationView {
@@ -49,7 +50,7 @@ struct HomeView: View {
                     Button(action: {}) {
                         Image(systemName: "mappin.circle.fill")
                             .font(.system(size: 28))
-                            .foregroundColor(.primaryBlack)
+                            .foregroundColor(AppColors.primaryBlack)
                     }
                 }
                 .padding(.top, 20)
@@ -100,28 +101,47 @@ struct HomeView: View {
                 
                 Spacer()
                 
-                // Locker Illustration and CTA
+                // Locker Illustration and CTA Buttons
                 VStack(spacing: 24) {
                     Image("locker_illustration")
                         .resizable()
                         .scaledToFit()
                         .frame(maxHeight: 240)
                     
+                    // Direct Rent Button
                     Button(action: {
                         showLockerMap = true
                     }) {
                         HStack {
-                            Text("START TO RENT")
+                            Text("DIRECT RENT")
                                 .fontWeight(.bold)
                             Image(systemName: "hand.tap.fill")
                                 .font(.system(size: 20))
                         }
-                        .foregroundColor(.primaryBlack)
+                        .foregroundColor(AppColors.primaryBlack)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.primaryYellow)
+                        .background(AppColors.primaryYellow)
                         .cornerRadius(16)
-                        .shadow(color: Color.primaryYellow.opacity(0.3), radius: 10, x: 0, y: 5)
+                        .shadow(color: AppColors.primaryYellow.opacity(0.3), radius: 10, x: 0, y: 5)
+                    }
+                    
+                    // Reservation Button
+                    Button(action: {
+                        showReservation = true
+                    }) {
+                        HStack {
+                            Text("RESERVATION")
+                                .fontWeight(.bold)
+                            Image(systemName: "calendar.badge.plus")
+                                .font(.system(size: 20))
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(AppColors.primaryBlack)
+                        .cornerRadius(16)
+                        .shadow(color: AppColors.primaryBlack.opacity(0.2), radius: 10, x: 0, y: 5)
                     }
                 }
                 .padding(.bottom, 30)
@@ -131,6 +151,9 @@ struct HomeView: View {
             .navigationBarHidden(true)
             .fullScreenCover(isPresented: $showLockerMap) {
                 LockerMapView()
+            }
+            .fullScreenCover(isPresented: $showReservation) {
+                ReservationDateSelectionView()
             }
         }
     }

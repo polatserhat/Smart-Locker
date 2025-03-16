@@ -34,7 +34,7 @@ struct LoginView: View {
                 }) {
                     Text("Forgot Password?")
                         .font(.subheadline)
-                        .foregroundColor(.primaryBlack)
+                        .foregroundColor(.black)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                 }
                 .padding(.top, 8)
@@ -53,7 +53,7 @@ struct LoginView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.primaryBlack)
+                        .background(Color.black)
                         .cornerRadius(12)
                 }
                 
@@ -66,7 +66,7 @@ struct LoginView: View {
                     }) {
                         Text("Sign Up")
                             .fontWeight(.medium)
-                            .foregroundColor(.primaryBlack)
+                            .foregroundColor(.black)
                     }
                 }
                 .font(.subheadline)
