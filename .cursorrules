@@ -1,0 +1,145 @@
+.cursorrules >
+
+
+You are building an iOS app that allows users to rent a smart locker from a map displaying available locations. The design is already finalized, so the app should match the provided design exactly. The backend will be Google Firebase, and you will not write backend code manually.
+
+ Important Rules You HAVE TO Follow
+
+Follow the design exactly – No UI improvisations, implement it as it is.
+
+Use Google Firebase for all backend operations – No manual backend coding.
+
+Ensure security – Locker access must be safe and reliable.
+
+Code must be modular – Separate concerns properly for scalability.
+
+Optimize UI/UX – SwiftUI should provide a seamless experience.
+
+📂 Project Structure
+
+ SmartLockerApp
+ ├── 📂 SmartLockerApp
+ │   ├── 📂 Model
+ │   │   ├── Locker.swift
+ │   │   ├── User.swift
+ │   │   ├── Reservation.swift
+ │   │   ├── PaymentPlan.swift
+ │   │   ├── FirebaseService.swift
+ │   │
+ │   ├── 📂 ViewModel
+ │   │   ├── AuthViewModel.swift
+ │   │   ├── LockerViewModel.swift
+ │   │   ├── ReservationViewModel.swift
+ │   │   ├── PaymentViewModel.swift
+ │   │
+ │   ├── 📂 View
+ │   │   ├── 📂 Authentication
+ │   │   │   ├── LoginView.swift
+ │   │   │   ├── RegisterView.swift
+ │   │   │   ├── ForgotPasswordView.swift
+ │   │   │
+ │   │   ├── 📂 Main
+ │   │   │   ├── HomeView.swift
+ │   │   │   ├── LockerMapView.swift
+ │   │   │   ├── LockerDetailView.swift
+ │   │   │
+ │   │   ├── 📂 Reservations
+ │   │   │   ├── ReservationListView.swift
+ │   │   │   ├── ReservationDetailView.swift
+ │   │   │
+ │   │   ├── 📂 Profile
+ │   │   │   ├── ProfileView.swift
+ │   │   │   ├── EditProfileView.swift
+ │   │   │   ├── PaymentHistoryView.swift
+ │   │   │
+ │   │   ├── 📂 Components
+ │   │   │   ├── QRScannerView.swift
+ │   │   │   ├── LockerCardView.swift
+ │   │   │   ├── PaymentPlanCardView.swift
+ │   │   │   ├── AlertView.swift
+ │   │   │
+ │   │   ├── AppTabView.swift
+ │   │
+ │   ├── 📂 Services
+ │   │   ├── AuthService.swift
+ │   │   ├── FirestoreService.swift
+ │   │   ├── StorageService.swift
+ │   │   ├── PaymentService.swift
+ │   │   ├── NotificationService.swift
+ │   │
+ │   ├── 📂 Utils
+ │   │   ├── Constants.swift
+ │   │   ├── Extensions.swift
+ │   │   ├── HelperFunctions.swift
+ │   │
+ │   ├── 📂 Resources
+ │   │   ├── Assets.xcassets
+ │   │   ├── Colors.swift
+ │   │   ├── Strings.swift
+ │   │   ├── Fonts.swift
+ │   │
+ │   ├── SmartLockerApp.swift
+ │   ├── AppDelegate.swift
+ │   ├── SceneDelegate.swift
+ │
+ ├── 📂 Firebase
+ │   ├── GoogleService-Info.plist
+ │   ├── FirebaseConfig.swift
+ │
+ ├── 📂 Tests
+ │   ├── UnitTests
+ │   │   ├── AuthTests.swift
+ │   │   ├── FirestoreTests.swift
+ │   │   ├── PaymentTests.swift
+ │   │
+ │   ├── UITests
+ │   │   ├── SmartLockerUITests.swift
+ │
+ ├── 📂 Pods (if using CocoaPods)
+ │
+ ├── 📜 README.md
+ ├── 📜 .gitignore
+ ├── 📜 Podfile (if using CocoaPods)
+ ├── 📜 Package.swift (if using Swift Package Manager)
+
+
+⚙️ Tech Stack
+
+SwiftUI & Swift
+
+MapKit & CoreLocation (for map & GPS)
+
+Firebase Authentication & Firestore (for user sign-in and data management)
+
+Stripe SDK (for payments)
+
+AVFoundation (for QR code scanning)
+
+🛠 Swift-Specific Rules
+
+1. State Management
+
+Use @State, @Binding, and @ObservedObject efficiently.
+
+Avoid unnecessary state updates for performance.
+
+2. Networking & Database
+
+Use Firebase Firestore & Authentication for all data-related operations.
+
+Do not manually write backend logic—use Firebase services directly.
+
+3. UI Components
+
+Follow the provided design exactly—no UI improvisation.
+
+Ensure Dark Mode compatibility.
+
+4. Security & Access Control
+
+Ensure QR codes expire after session ends.
+
+Validate payments before unlocking.
+
+
+
