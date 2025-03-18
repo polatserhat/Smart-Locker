@@ -1,5 +1,4 @@
 import SwiftUI
-import PhotosUI
 
 struct SignUpView: View {
     @Environment(\.dismiss) private var dismiss
@@ -7,9 +6,6 @@ struct SignUpView: View {
     @State private var name = ""
     @State private var email = ""
     @State private var password = ""
-    @State private var selectedImage: UIImage?
-    @State private var showImagePicker = false
-    @State private var photoPickerItem: PhotosPickerItem?
     
     var body: some View {
         VStack(spacing: 24) {
@@ -37,38 +33,6 @@ struct SignUpView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             
-            // Profile Picture Selection
-            VStack(spacing: 12) {
-                if let selectedImage = selectedImage {
-                    Image(uiImage: selectedImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 100, height: 100)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(AppColors.primaryYellow, lineWidth: 2))
-                } else {
-                    Image(systemName: "person.circle.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 100, height: 100)
-                        .foregroundColor(.gray)
-                }
-                
-                PhotosPicker(selection: $photoPickerItem, matching: .images) {
-                    Text("Select Profile Picture")
-                        .font(.subheadline)
-                        .foregroundColor(AppColors.primaryYellow)
-                }
-            }
-            .onChange(of: photoPickerItem) { _ in
-                Task {
-                    if let data = try? await photoPickerItem?.loadTransferable(type: Data.self),
-                       let image = UIImage(data: data) {
-                        selectedImage = image
-                    }
-                }
-            }
-            
             VStack(spacing: 20) {
                 InputField(title: "NAME", text: $name)
                 InputField(title: "EMAIL", text: $email)
@@ -91,7 +55,7 @@ struct SignUpView: View {
                         name: name,
                         email: email,
                         password: password,
-                        profileImage: selectedImage
+                        profileImage: nil
                     )
                 }) {
                     if authViewModel.isLoading {

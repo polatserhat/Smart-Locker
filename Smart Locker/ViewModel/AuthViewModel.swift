@@ -1,6 +1,5 @@
 import SwiftUI
 import FirebaseAuth
-import FirebaseStorage
 import FirebaseFirestore
 
 class AuthViewModel: ObservableObject {
@@ -10,7 +9,6 @@ class AuthViewModel: ObservableObject {
     @Published var isLoading = false
     
     private let auth = Auth.auth()
-    private let storage = Storage.storage()
     private let firestore = Firestore.firestore()
     
     init() {
@@ -21,9 +19,12 @@ class AuthViewModel: ObservableObject {
         auth.addStateDidChangeListener { [weak self] _, user in
             guard let self = self else { return }
             DispatchQueue.main.async {
+                print("Auth state changed. User: \(user?.uid ?? "nil")")
                 self.isAuthenticated = user != nil
                 if let user = user {
                     self.fetchUserData(userId: user.uid)
+                } else {
+                    self.currentUser = nil
                 }
             }
         }
@@ -38,9 +39,11 @@ class AuthViewModel: ObservableObject {
             DispatchQueue.main.async {
                 self.isLoading = false
                 if let error = error {
+                    print("Sign in error: \(error.localizedDescription)")
                     self.errorMessage = self.handleAuthError(error)
-                } else if let userId = result?.user.uid {
-                    self.fetchUserData(userId: userId)
+                } else {
+                    print("Sign in successful")
+                    self.isAuthenticated = true
                 }
             }
         }
@@ -55,11 +58,14 @@ class AuthViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         
+        print("Starting sign up process for email: \(email)")
+        
         auth.createUser(withEmail: email, password: password) { [weak self] result, error in
             guard let self = self else { return }
             
             if let error = error {
                 DispatchQueue.main.async {
+                    print("Sign up error: \(error.localizedDescription)")
                     self.isLoading = false
                     self.errorMessage = self.handleAuthError(error)
                 }
@@ -68,28 +74,41 @@ class AuthViewModel: ObservableObject {
             
             guard let userId = result?.user.uid else {
                 DispatchQueue.main.async {
+                    print("Failed to get user ID after creation")
                     self.isLoading = false
-                    self.errorMessage = "Failed to create user"
+                    self.errorMessage = "User ID not found after registration"
                 }
                 return
             }
             
-            // Upload profile image if provided
-            if let image = profileImage {
-                self.uploadProfileImage(image, userId: userId) { imageUrl in
-                    self.createUserProfile(userId: userId, name: name, email: email, profileImageUrl: imageUrl)
+            print("User created successfully with ID: \(userId)")
+            
+            // Update Firebase Auth Profile with Display Name
+            let changeRequest = self.auth.currentUser?.createProfileChangeRequest()
+            changeRequest?.displayName = name
+            changeRequest?.commitChanges { [weak self] error in
+                guard let self = self else { return }
+                if let error = error {
+                    print("Failed to update display name: \(error.localizedDescription)")
+                    DispatchQueue.main.async {
+                        self.errorMessage = "Failed to update profile: \(error.localizedDescription)"
+                    }
+                } else {
+                    print("Display name updated successfully")
                 }
-            } else {
-                self.createUserProfile(userId: userId, name: name, email: email, profileImageUrl: nil)
             }
+            
+            // Store User in Firestore
+            self.createUserProfile(userId: userId, name: name, email: email)
         }
     }
     
-    private func createUserProfile(userId: String, name: String, email: String, profileImageUrl: String?) {
+    private func createUserProfile(userId: String, name: String, email: String) {
+        print("Creating user profile in Firestore for user: \(userId)")
+        
         let userData: [String: Any] = [
             "name": name,
             "email": email,
-            "profileImageUrl": profileImageUrl as Any,
             "createdAt": FieldValue.serverTimestamp()
         ]
         
@@ -98,13 +117,15 @@ class AuthViewModel: ObservableObject {
             DispatchQueue.main.async {
                 self.isLoading = false
                 if let error = error {
-                    self.errorMessage = error.localizedDescription
+                    print("Firestore error: \(error.localizedDescription)")
+                    self.errorMessage = "Failed to store user data: \(error.localizedDescription)"
                 } else {
+                    print("User profile created successfully in Firestore")
                     self.currentUser = User(
                         id: userId,
                         name: name,
                         email: email,
-                        profileImageUrl: profileImageUrl
+                        profileImageUrl: nil
                     )
                     self.isAuthenticated = true
                 }
@@ -112,47 +133,31 @@ class AuthViewModel: ObservableObject {
         }
     }
     
-    func uploadProfileImage(_ image: UIImage, userId: String, completion: @escaping (String?) -> Void) {
-        guard let imageData = image.jpegData(compressionQuality: 0.5) else {
-            completion(nil)
-            return
-        }
+    func fetchUserData(userId: String) {
+        print("Fetching user data for ID: \(userId)")
         
-        let storageRef = storage.reference().child("users/\(userId)/profile.jpg")
-        
-        storageRef.putData(imageData, metadata: nil) { _, error in
+        firestore.collection("users").document(userId).getDocument { [weak self] snapshot, error in
+            guard let self = self else { return }
+            
             if let error = error {
-                print("Error uploading image: \(error.localizedDescription)")
-                completion(nil)
+                print("Error fetching user data: \(error.localizedDescription)")
                 return
             }
             
-            storageRef.downloadURL { url, error in
-                if let error = error {
-                    print("Error getting download URL: \(error.localizedDescription)")
-                    completion(nil)
-                    return
-                }
-                completion(url?.absoluteString)
-            }
-        }
-    }
-    
-    func fetchUserData(userId: String) {
-        firestore.collection("users").document(userId).getDocument { [weak self] snapshot, error in
-            guard let self = self,
-                  let data = snapshot?.data(),
+            guard let data = snapshot?.data(),
                   let name = data["name"] as? String,
                   let email = data["email"] as? String else {
+                print("Invalid or missing user data in Firestore")
                 return
             }
             
+            print("User data fetched successfully")
             DispatchQueue.main.async {
                 self.currentUser = User(
                     id: userId,
                     name: name,
                     email: email,
-                    profileImageUrl: data["profileImageUrl"] as? String
+                    profileImageUrl: nil
                 )
             }
         }
@@ -161,11 +166,13 @@ class AuthViewModel: ObservableObject {
     func signOut() {
         do {
             try auth.signOut()
+            print("User signed out successfully")
             DispatchQueue.main.async {
                 self.isAuthenticated = false
                 self.currentUser = nil
             }
         } catch {
+            print("Sign out error: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
     }
