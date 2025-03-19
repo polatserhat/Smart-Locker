@@ -57,7 +57,7 @@ struct HomeView: View {
                 
                 // Greeting and Title
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Hello, Serhat")
+                    Text("Hello, Serhat Polat")
                         .font(.title3)
                         .foregroundColor(.gray)
                     
