@@ -1,0 +1,36 @@
+# Xcode kişisel dosyalarını hariç tut
+*.xcuserstate
+xcuserdata/
+
+# Xcode build dosyalarını hariç tut
+DerivedData/
+*.xcworkspace
+*.xcworkspacedata
+*.xccheckout
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+build/
+*.ipa
+
+# Swift Package Manager dosyaları
+.build/
+.swiftpm/
+
+# CocoaPods ve Carthage
+Pods/
+Podfile.lock
+Carthage/Checkouts/
+Carthage/Build/
+
+# Güvenlik ve log dosyaları
+*.key
+*.pem
+*.p12
+*.mobileprovision
+*.xcconfig
+*.log
+*.trace
+
+# Sistem dosyaları
+.DS_Store
+Thumbs.db
