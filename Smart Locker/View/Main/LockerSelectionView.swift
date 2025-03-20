@@ -50,7 +50,7 @@ struct LockerSelectionView: View {
     @State private var selectedSize: LockerSize?
     @State private var showConfirmation = false
     
-    let location: Location
+    let location: LockerLocation
     let rentalType: RentalType
     
     var body: some View {
@@ -141,13 +141,16 @@ struct LockerSelectionView: View {
         .background(Color(UIColor.systemBackground))
         .fullScreenCover(isPresented: $showConfirmation) {
             if let size = selectedSize {
-                LockerConfirmationView(rental: LockerRental(
-                    id: UUID().uuidString,
-                    shopName: location.name,
-                    size: size,
-                    rentalType: rentalType,
-                    reservationDate: nil
-                ))
+                LockerConfirmationView(
+                    rental: LockerRental(
+                        id: UUID().uuidString,
+                        shopName: location.name,
+                        size: size,
+                        rentalType: rentalType,
+                        reservationDate: nil
+                    ),
+                    location: location
+                )
             }
         }
     }
@@ -159,7 +162,7 @@ extension LockerSize: CaseIterable {
 
 #Preview {
     LockerSelectionView(
-        location: Location.sampleLocations[0],
+        location: LockerLocation.sampleLocations[0],
         rentalType: .instant
     )
 } 

@@ -1,10 +1,12 @@
 import SwiftUI
+import MapKit
 
 struct LockerConfirmationView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showPaymentView = false
     
     let rental: LockerRental
+    let location: LockerLocation
     
     var body: some View {
         VStack(spacing: 24) {
@@ -39,6 +41,10 @@ struct LockerConfirmationView: View {
                     Text(rental.shopName)
                         .font(.title3)
                         .fontWeight(.semibold)
+                    
+                    Text(location.address)
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 
@@ -156,17 +162,24 @@ struct LockerConfirmationView: View {
         .padding(.horizontal, 24)
         .background(Color(UIColor.systemBackground))
         .fullScreenCover(isPresented: $showPaymentView) {
-            PaymentView(rental: rental)
+            PaymentView(rental: rental, location: location)
         }
     }
 }
 
 #Preview {
-    LockerConfirmationView(rental: LockerRental(
-        id: UUID().uuidString,
-        shopName: "Airport Terminal 1",
-        size: LockerSize.medium,
-        rentalType: RentalType.instant,
-        reservationDate: nil as Date?
-    ))
+    LockerConfirmationView(
+        rental: LockerRental(
+            id: UUID().uuidString,
+            shopName: "Airport Terminal 1",
+            size: LockerSize.medium,
+            rentalType: RentalType.instant,
+            reservationDate: nil as Date?
+        ),
+        location: LockerLocation(
+            name: "Airport Terminal 1",
+            coordinate: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
+            address: "123 Airport Blvd, San Francisco, CA 94128"
+        )
+    )
 } 

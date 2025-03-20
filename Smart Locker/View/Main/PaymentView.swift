@@ -1,4 +1,5 @@
 import SwiftUI
+import MapKit
 
 struct PaymentView: View {
     @Environment(\.dismiss) private var dismiss
@@ -8,6 +9,7 @@ struct PaymentView: View {
     @State private var selectedPaymentMethod: PaymentMethod?
     
     let rental: LockerRental
+    let location: LockerLocation
     
     let paymentMethods = [
         PaymentMethod(name: "Credit/Debit Card", icon: "creditcard.fill", isSelected: true),
@@ -123,7 +125,7 @@ struct PaymentView: View {
         .padding(.horizontal, 24)
         .background(Color(UIColor.systemBackground))
         .fullScreenCover(isPresented: $showConfirmation) {
-            PaymentConfirmationView(rental: rental)
+            PaymentConfirmationView(rental: rental, location: location)
         }
     }
     
@@ -185,11 +187,18 @@ struct PaymentMethodRow: View {
 }
 
 #Preview {
-    PaymentView(rental: LockerRental(
-        id: "1",
-        shopName: "Smart Locker Shop - A-103",
-        size: .medium,
-        rentalType: .instant,
-        reservationDate: nil
-    ))
+    PaymentView(
+        rental: LockerRental(
+            id: "1",
+            shopName: "Smart Locker Shop - A-103",
+            size: .medium,
+            rentalType: .instant,
+            reservationDate: nil
+        ),
+        location: LockerLocation(
+            name: "Smart Locker Shop - A-103",
+            coordinate: CLLocationCoordinate2D(latitude: 37.7697, longitude: -122.4269),
+            address: "789 Howard St, San Francisco, CA 94103"
+        )
+    )
 } 

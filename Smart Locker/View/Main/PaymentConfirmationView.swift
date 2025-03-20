@@ -1,8 +1,11 @@
 import SwiftUI
+import MapKit
 
 struct PaymentConfirmationView: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var showingDirectionsSheet = false
     let rental: LockerRental
+    let location: LockerLocation
     
     var body: some View {
         VStack(spacing: 32) {
@@ -41,6 +44,21 @@ struct PaymentConfirmationView: View {
                 .cornerRadius(12)
                 .shadow(color: Color.black.opacity(0.05), radius: 10)
                 
+                // Get Directions Button
+                Button(action: {
+                    showingDirectionsSheet = true
+                }) {
+                    HStack {
+                        Image(systemName: "location.fill")
+                        Text("Get Directions")
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(AppColors.primaryYellow)
+                    .cornerRadius(12)
+                }
+                
                 // QR Code (Mocked)
                 VStack(spacing: 12) {
                     Text("Access Code")
@@ -71,7 +89,7 @@ struct PaymentConfirmationView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.black)
+                        .background(AppColors.primaryBlack)
                         .cornerRadius(12)
                 }
                 
@@ -84,7 +102,7 @@ struct PaymentConfirmationView: View {
                         .foregroundColor(.gray)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.gray)
+                        .background(Color.gray.opacity(0.2))
                         .cornerRadius(12)
                 }
             }
@@ -92,6 +110,23 @@ struct PaymentConfirmationView: View {
         }
         .padding(.horizontal, 24)
         .background(Color(UIColor.systemBackground))
+        .confirmationDialog(
+            "Get Directions",
+            isPresented: $showingDirectionsSheet,
+            titleVisibility: .visible
+        ) {
+            Button("Open in Apple Maps") {
+                location.openInMaps()
+            }
+            
+            Button("Open in Google Maps") {
+                location.openInGoogleMaps()
+            }
+            
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Choose your preferred navigation app")
+        }
     }
 }
 
@@ -120,11 +155,18 @@ struct DetailRow: View {
 }
 
 #Preview {
-    PaymentConfirmationView(rental: LockerRental(
-        id: "1",
-        shopName: "Smart Locker Shop - A-103",
-        size: .medium,
-        rentalType: .instant,
-        reservationDate: nil
-    ))
+    PaymentConfirmationView(
+        rental: LockerRental(
+            id: "1",
+            shopName: "Smart Locker Shop - A-103",
+            size: .medium,
+            rentalType: .instant,
+            reservationDate: nil
+        ),
+        location: LockerLocation(
+            name: "Smart Locker Shop - A-103",
+            coordinate: CLLocationCoordinate2D(latitude: 37.7697, longitude: -122.4269),
+            address: "789 Howard St, San Francisco, CA 94103"
+        )
+    )
 } 
