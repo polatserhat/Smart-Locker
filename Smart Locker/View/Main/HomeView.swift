@@ -30,19 +30,36 @@ struct HomeView: View {
     @State private var selectedCategory = 0
     @State private var showLockerMap = false
     @State private var showReservation = false
+    @State private var showProfile = false
+    @EnvironmentObject private var authViewModel: AuthViewModel
     
     var body: some View {
         NavigationView {
             VStack(alignment: .leading, spacing: 24) {
                 // Top Section
                 HStack {
-                    // Profile Picture
-                    Image("profile_placeholder")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 48, height: 48)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.gray.opacity(0.2), lineWidth: 1))
+                    // Profile Picture with Navigation
+                    Button(action: {
+                        showProfile = true
+                    }) {
+                        if let user = authViewModel.currentUser {
+                            VStack(alignment: .leading) {
+                                Image("profile_placeholder")
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 48, height: 48)
+                                    .clipShape(Circle())
+                                    .overlay(Circle().stroke(Color.gray.opacity(0.2), lineWidth: 1))
+                            }
+                        } else {
+                            Image("profile_placeholder")
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 48, height: 48)
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(Color.gray.opacity(0.2), lineWidth: 1))
+                        }
+                    }
                     
                     Spacer()
                     
@@ -57,7 +74,7 @@ struct HomeView: View {
                 
                 // Greeting and Title
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Hello, Serhat Polat")
+                    Text("Hello, \(authViewModel.currentUser?.name ?? "User")")
                         .font(.title3)
                         .foregroundColor(.gray)
                     
@@ -155,6 +172,9 @@ struct HomeView: View {
             .fullScreenCover(isPresented: $showReservation) {
                 ReservationDateSelectionView()
             }
+            .fullScreenCover(isPresented: $showProfile) {
+                ProfilePageView()
+            }
         }
     }
 }
@@ -162,5 +182,6 @@ struct HomeView: View {
 struct HomeView_Previews: PreviewProvider {
     static var previews: some View {
         HomeView()
+            .environmentObject(AuthViewModel())
     }
 } 
