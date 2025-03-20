@@ -3,10 +3,13 @@ import MapKit
 
 struct PaymentView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var authViewModel: AuthViewModel
     @State private var showConfirmation = false
     @State private var isProcessing = false
     @State private var paymentDetails = PaymentDetails()
     @State private var selectedPaymentMethod: PaymentMethod?
+    @State private var error: String?
+    @State private var showError = false
     
     let rental: LockerRental
     let location: LockerLocation
@@ -43,7 +46,6 @@ struct PaymentView: View {
                             OrderDetailRow(title: "Selected Size", value: "\(rental.size.rawValue) (\(rental.size.dimensions))")
                             OrderDetailRow(title: "Duration", value: "24 Hours")
                             OrderDetailRow(title: "Total Amount", value: "$\(String(format: "%.2f", rental.totalPrice ?? 0.00))", isTotal: true)
-
                         }
                     }
                     .padding()
@@ -127,15 +129,43 @@ struct PaymentView: View {
         .fullScreenCover(isPresented: $showConfirmation) {
             PaymentConfirmationView(rental: rental, location: location)
         }
+        .alert("Error", isPresented: $showError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(error ?? "An error occurred")
+        }
     }
     
     private func processPayment() {
+        guard let userId = authViewModel.currentUser?.id else {
+            error = "User not logged in"
+            showError = true
+            return
+        }
+        
         isProcessing = true
         
         // Simulate payment processing
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            isProcessing = false
-            showConfirmation = true
+            // Create rental in Firestore
+            FirestoreService.shared.createRental(
+                userId: userId,
+                location: location,
+                size: rental.size,
+                startDate: Date(),
+                endDate: Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date(),
+                totalPrice: rental.totalPrice ?? 0.0
+            ) { result in
+                isProcessing = false
+                
+                switch result {
+                case .success:
+                    showConfirmation = true
+                case .failure(let error):
+                    self.error = error.localizedDescription
+                    showError = true
+                }
+            }
         }
     }
 }
@@ -201,4 +231,5 @@ struct PaymentMethodRow: View {
             address: "789 Howard St, San Francisco, CA 94103"
         )
     )
+    .environmentObject(AuthViewModel())
 } 

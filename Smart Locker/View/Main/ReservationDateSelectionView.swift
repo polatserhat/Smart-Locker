@@ -2,8 +2,12 @@ import SwiftUI
 
 struct ReservationDateSelectionView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedDates: Set<Date> = []
+    @EnvironmentObject private var authViewModel: AuthViewModel
+    @State private var currentMonth = Date()
+    @State private var selectedDates = Set<Date>()
     @State private var showLocationSelection = false
+    @State private var error: String?
+    @State private var showError = false
     
     private let calendar = Calendar.current
     private let dateFormatter: DateFormatter = {
@@ -12,28 +16,9 @@ struct ReservationDateSelectionView: View {
         return formatter
     }()
     
-    private var monthFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
-        return formatter
-    }()
-    
-    @State private var currentMonth = Date()
-    
-    private var days: [Date] {
-        guard let monthInterval = calendar.dateInterval(of: .month, for: currentMonth),
-              let monthFirstWeek = calendar.dateInterval(of: .weekOfMonth, for: monthInterval.start),
-              let monthLastWeek = calendar.dateInterval(of: .weekOfMonth, for: monthInterval.end - 1)
-        else { return [] }
-        
-        let dateInterval = DateInterval(start: monthFirstWeek.start, end: monthLastWeek.end)
-        
-        return calendar.generateDates(for: dateInterval)
-    }
-    
     var body: some View {
         VStack(spacing: 24) {
-            // Header
+            // Header with back button
             HStack {
                 Button(action: {
                     dismiss()
@@ -62,7 +47,7 @@ struct ReservationDateSelectionView: View {
                 
                 Spacer()
                 
-                Text(monthFormatter.string(from: currentMonth))
+                Text(currentMonth, formatter: DateFormatter.monthYear)
                     .font(.headline)
                 
                 Spacer()
@@ -74,49 +59,32 @@ struct ReservationDateSelectionView: View {
             }
             .padding(.horizontal)
             
-            // Weekday headers
-            HStack {
-                ForEach(calendar.veryShortWeekdaySymbols, id: \.self) { symbol in
-                    Text(symbol)
+            // Calendar Grid
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 8) {
+                ForEach(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], id: \.self) { day in
+                    Text(day)
                         .font(.caption)
-                        .fontWeight(.bold)
                         .foregroundColor(.gray)
                         .frame(maxWidth: .infinity)
                 }
-            }
-            
-            // Calendar grid
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 8) {
+                
+                let days = calendar.generateDates(
+                    for: DateInterval(
+                        start: calendar.date(from: calendar.dateComponents([.year, .month], from: currentMonth))!,
+                        end: calendar.date(byAdding: DateComponents(month: 1, day: -1), to: currentMonth)!
+                    )
+                )
+                
                 ForEach(days, id: \.self) { date in
                     if calendar.isDate(date, equalTo: currentMonth, toGranularity: .month) {
                         Button(action: {
                             toggleDate(date)
                         }) {
                             Text(dateFormatter.string(from: date))
-                                .font(.system(.body, design: .rounded))
                                 .frame(maxWidth: .infinity, minHeight: 40)
-                                .background(
-                                    selectedDates.contains(date)
-                                    ? AppColors.primaryYellow
-                                    : Color.clear
-                                )
-                                .foregroundColor(
-                                    selectedDates.contains(date)
-                                    ? AppColors.primaryBlack
-                                    : calendar.isDateInToday(date)
-                                    ? AppColors.primaryYellow
-                                    : .primary
-                                )
+                                .background(selectedDates.contains(date) ? AppColors.primaryYellow : Color.clear)
+                                .foregroundColor(selectedDates.contains(date) ? .white : .primary)
                                 .cornerRadius(8)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(
-                                            calendar.isDateInToday(date)
-                                            ? AppColors.primaryYellow
-                                            : Color.clear,
-                                            lineWidth: 1
-                                        )
-                                )
                         }
                     } else {
                         Text(dateFormatter.string(from: date))
@@ -179,6 +147,11 @@ struct ReservationDateSelectionView: View {
         .fullScreenCover(isPresented: $showLocationSelection) {
             LockerMapView(reservationDates: selectedDates)
         }
+        .alert("Error", isPresented: $showError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(error ?? "An error occurred")
+        }
     }
     
     private func toggleDate(_ date: Date) {
@@ -225,6 +198,15 @@ extension Calendar {
     }
 }
 
+extension DateFormatter {
+    static let monthYear: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter
+    }()
+}
+
 #Preview {
     ReservationDateSelectionView()
+        .environmentObject(AuthViewModel())
 } 

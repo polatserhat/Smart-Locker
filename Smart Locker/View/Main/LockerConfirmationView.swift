@@ -3,7 +3,11 @@ import MapKit
 
 struct LockerConfirmationView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var authViewModel: AuthViewModel
     @State private var showPaymentView = false
+    @State private var error: String?
+    @State private var showError = false
+    @State private var isProcessing = false
     
     let rental: LockerRental
     let location: LockerLocation
@@ -147,22 +151,70 @@ struct LockerConfirmationView: View {
             
             // CTA Button
             Button(action: {
-                showPaymentView = true
+                if rental.rentalType == .reservation {
+                    createReservation()
+                } else {
+                    showPaymentView = true
+                }
             }) {
-                Text("Proceed to Payment")
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(AppColors.primaryBlack)
-                    .cornerRadius(12)
+                if isProcessing {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                } else {
+                    Text(rental.rentalType == .reservation ? "Confirm Reservation" : "Proceed to Payment")
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(AppColors.primaryBlack)
+                        .cornerRadius(12)
+                }
             }
+            .disabled(isProcessing)
             .padding(.bottom, 30)
         }
         .padding(.horizontal, 24)
         .background(Color(UIColor.systemBackground))
         .fullScreenCover(isPresented: $showPaymentView) {
             PaymentView(rental: rental, location: location)
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(error ?? "An error occurred")
+        }
+    }
+    
+    private func createReservation() {
+        guard let userId = authViewModel.currentUser?.id else {
+            error = "User not logged in"
+            showError = true
+            return
+        }
+        
+        guard let reservationDate = rental.reservationDate else {
+            error = "No reservation date selected"
+            showError = true
+            return
+        }
+        
+        isProcessing = true
+        
+        FirestoreService.shared.createReservation(
+            userId: userId,
+            location: location,
+            size: rental.size,
+            dates: [reservationDate]
+        ) { result in
+            isProcessing = false
+            
+            switch result {
+            case .success:
+                showPaymentView = true
+            case .failure(let error):
+                self.error = error.localizedDescription
+                showError = true
+            }
         }
     }
 }
@@ -182,4 +234,5 @@ struct LockerConfirmationView: View {
             address: "123 Airport Blvd, San Francisco, CA 94128"
         )
     )
+    .environmentObject(AuthViewModel())
 } 

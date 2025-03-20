@@ -19,7 +19,6 @@ class AuthViewModel: ObservableObject {
         auth.addStateDidChangeListener { [weak self] _, user in
             guard let self = self else { return }
             DispatchQueue.main.async {
-                print("Auth state changed. User: \(user?.uid ?? "nil")")
                 self.isAuthenticated = user != nil
                 if let user = user {
                     self.fetchUserData(userId: user.uid)
@@ -31,6 +30,17 @@ class AuthViewModel: ObservableObject {
     }
     
     func signIn(email: String, password: String) {
+        // Validate input
+        guard !email.isEmpty else {
+            errorMessage = "Please enter your email"
+            return
+        }
+        
+        guard !password.isEmpty else {
+            errorMessage = "Please enter your password"
+            return
+        }
+        
         isLoading = true
         errorMessage = nil
         
@@ -39,74 +49,71 @@ class AuthViewModel: ObservableObject {
             DispatchQueue.main.async {
                 self.isLoading = false
                 if let error = error {
-                    print("Sign in error: \(error.localizedDescription)")
                     self.errorMessage = self.handleAuthError(error)
-                } else {
-                    print("Sign in successful")
-                    self.isAuthenticated = true
                 }
             }
         }
     }
     
     func signUp(name: String, email: String, password: String, profileImage: UIImage? = nil) {
+        // Validate input
+        guard !name.isEmpty else {
+            errorMessage = "Please enter your name"
+            return
+        }
+        
+        guard !email.isEmpty else {
+            errorMessage = "Please enter your email"
+            return
+        }
+        
+        guard !password.isEmpty else {
+            errorMessage = "Please enter a password"
+            return
+        }
+        
         guard isValidPassword(password) else {
-            errorMessage = "Password must be at least 8 characters long and contain at least one uppercase letter, one number, and one special character"
+            errorMessage = "Password must be at least 6 characters long"
             return
         }
         
         isLoading = true
         errorMessage = nil
         
-        print("Starting sign up process for email: \(email)")
-        
         auth.createUser(withEmail: email, password: password) { [weak self] result, error in
             guard let self = self else { return }
             
-            if let error = error {
-                DispatchQueue.main.async {
-                    print("Sign up error: \(error.localizedDescription)")
+            DispatchQueue.main.async {
+                if let error = error {
                     self.isLoading = false
                     self.errorMessage = self.handleAuthError(error)
+                    return
                 }
-                return
-            }
-            
-            guard let userId = result?.user.uid else {
-                DispatchQueue.main.async {
-                    print("Failed to get user ID after creation")
+                
+                guard let userId = result?.user.uid else {
                     self.isLoading = false
-                    self.errorMessage = "User ID not found after registration"
+                    self.errorMessage = "Failed to create account"
+                    return
                 }
-                return
-            }
-            
-            print("User created successfully with ID: \(userId)")
-            
-            // Update Firebase Auth Profile with Display Name
-            let changeRequest = self.auth.currentUser?.createProfileChangeRequest()
-            changeRequest?.displayName = name
-            changeRequest?.commitChanges { [weak self] error in
-                guard let self = self else { return }
-                if let error = error {
-                    print("Failed to update display name: \(error.localizedDescription)")
-                    DispatchQueue.main.async {
-                        self.errorMessage = "Failed to update profile: \(error.localizedDescription)"
+                
+                // Update display name
+                let changeRequest = self.auth.currentUser?.createProfileChangeRequest()
+                changeRequest?.displayName = name
+                changeRequest?.commitChanges { [weak self] error in
+                    if let error = error {
+                        print("Failed to update display name: \(error.localizedDescription)")
                     }
-                } else {
-                    print("Display name updated successfully")
                 }
+                
+                // Create user profile in Firestore
+                self.createUserProfile(userId: userId, name: name, email: email)
             }
-            
-            // Store User in Firestore
-            self.createUserProfile(userId: userId, name: name, email: email)
         }
     }
     
     private func createUserProfile(userId: String, name: String, email: String) {
-        print("Creating user profile in Firestore for user: \(userId)")
-        
         let userData: [String: Any] = [
+            "id": userId,
             "name": name,
             "email": email,
             "createdAt": FieldValue.serverTimestamp()
@@ -117,10 +124,8 @@ class AuthViewModel: ObservableObject {
             DispatchQueue.main.async {
                 self.isLoading = false
                 if let error = error {
-                    print("Firestore error: \(error.localizedDescription)")
-                    self.errorMessage = "Failed to store user data: \(error.localizedDescription)"
+                    self.errorMessage = "Failed to create profile: \(error.localizedDescription)"
                 } else {
-                    print("User profile created successfully in Firestore")
                     self.currentUser = User(
                         id: userId,
                         name: name,
@@ -134,8 +139,6 @@ class AuthViewModel: ObservableObject {
     }
     
     func fetchUserData(userId: String) {
-        print("Fetching user data for ID: \(userId)")
-        
         firestore.collection("users").document(userId).getDocument { [weak self] snapshot, error in
             guard let self = self else { return }
             
@@ -151,7 +154,6 @@ class AuthViewModel: ObservableObject {
                 return
             }
             
-            print("User data fetched successfully")
             DispatchQueue.main.async {
                 self.currentUser = User(
                     id: userId,
@@ -166,37 +168,35 @@ class AuthViewModel: ObservableObject {
     func signOut() {
         do {
             try auth.signOut()
-            print("User signed out successfully")
             DispatchQueue.main.async {
                 self.isAuthenticated = false
                 self.currentUser = nil
             }
         } catch {
-            print("Sign out error: \(error.localizedDescription)")
-            errorMessage = error.localizedDescription
+            errorMessage = "Failed to sign out: \(error.localizedDescription)"
         }
     }
     
     private func isValidPassword(_ password: String) -> Bool {
-        let passwordRegex = "^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})"
-        return NSPredicate(format: "SELF MATCHES %@", passwordRegex).evaluate(with: password)
+        // Simplified password validation: minimum 6 characters
+        return password.count >= 6
     }
     
     private func handleAuthError(_ error: Error) -> String {
         let authError = error as NSError
         switch authError.code {
         case AuthErrorCode.wrongPassword.rawValue:
-            return "Invalid password. Please try again."
+            return "Invalid email or password"
         case AuthErrorCode.invalidEmail.rawValue:
-            return "Invalid email address."
+            return "Please enter a valid email address"
         case AuthErrorCode.emailAlreadyInUse.rawValue:
-            return "Email is already in use."
+            return "This email is already registered"
         case AuthErrorCode.weakPassword.rawValue:
-            return "Password is too weak."
+            return "Password must be at least 6 characters long"
         case AuthErrorCode.userNotFound.rawValue:
-            return "Account not found. Please sign up."
+            return "Account not found. Please sign up"
         default:
-            return error.localizedDescription
+            return "An error occurred. Please try again"
         }
     }
 }
