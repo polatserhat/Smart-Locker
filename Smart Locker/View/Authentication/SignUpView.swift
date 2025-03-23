@@ -93,39 +93,6 @@ struct SignUpView: View {
     }
 }
 
-struct InputField: View {
-    let title: String
-    @Binding var text: String
-    var isSecure: Bool = false
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.gray)
-            
-            if isSecure {
-                SecureField("", text: $text)
-                    .textFieldStyle(CustomTextFieldStyle())
-            } else {
-                TextField("", text: $text)
-                    .textFieldStyle(CustomTextFieldStyle())
-            }
-        }
-    }
-}
-
-struct CustomTextFieldStyle: TextFieldStyle {
-    func _body(configuration: TextField<Self._Label>) -> some View {
-        configuration
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(UIColor.systemGray6))
-            )
-    }
-}
-
 #Preview {
     SignUpView()
         .environmentObject(AuthViewModel())

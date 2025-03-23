@@ -48,7 +48,9 @@ struct LockerSizeCard: View {
 struct LockerSelectionView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedSize: LockerSize?
-    @State private var showConfirmation = false
+    @State private var showPlanSelection = false
+    @State private var showPlansInfo = false
+    @State private var showSizeSelectionHint = false
     
     let location: LockerLocation
     let rentalType: RentalType
@@ -83,18 +85,49 @@ struct LockerSelectionView: View {
                     .font(.subheadline)
                     .foregroundColor(.gray)
                 
-                Text(rentalType == .instant ? "Direct Rent" : "Reservation")
-                    .font(.subheadline)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(rentalType == .instant ? AppColors.primaryYellow : Color.blue.opacity(0.2))
-                    .cornerRadius(8)
+                HStack(spacing: 8) {
+                    Text(rentalType == .instant ? "Direct Rent" : "Reservation")
+                        .font(.subheadline)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(rentalType == .instant ? AppColors.primaryYellow : Color.blue.opacity(0.2))
+                        .cornerRadius(8)
+                    
+                    // Step indicator
+                    Text("Step 1 of 2")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(8)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
             .background(Color.white)
             .cornerRadius(12)
             .shadow(color: Color.black.opacity(0.05), radius: 10)
+            
+            // View Plans Button
+            Button(action: {
+                showPlansInfo = true
+            }) {
+                HStack {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundColor(AppColors.primaryYellow)
+                    Text("View Available Plans")
+                        .foregroundColor(AppColors.primaryBlack)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                }
+                .padding(.vertical, 12)
+                .padding(.horizontal, 16)
+                .background(Color.white)
+                .cornerRadius(8)
+                .shadow(color: Color.black.opacity(0.05), radius: 5)
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
             
             // Locker Size Selection
             VStack(spacing: 16) {
@@ -112,7 +145,10 @@ struct LockerSelectionView: View {
                             size: size,
                             isSelected: selectedSize == size
                         ) {
-                            selectedSize = size
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                selectedSize = size
+                                showSizeSelectionHint = false
+                            }
                         }
                     }
                 }
@@ -120,13 +156,27 @@ struct LockerSelectionView: View {
             
             Spacer()
             
+            // Selection Hint
+            if showSizeSelectionHint {
+                Text("Please select a locker size to continue")
+                    .font(.caption)
+                    .foregroundColor(.red)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+            
             // CTA Button
             Button(action: {
                 if let size = selectedSize {
-                    showConfirmation = true
+                    withAnimation {
+                        showPlanSelection = true
+                    }
+                } else {
+                    withAnimation {
+                        showSizeSelectionHint = true
+                    }
                 }
             }) {
-                Text("Confirm Selection")
+                Text("Continue to Plan Selection")
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
@@ -134,14 +184,13 @@ struct LockerSelectionView: View {
                     .background(selectedSize != nil ? AppColors.primaryBlack : Color.gray)
                     .cornerRadius(12)
             }
-            .disabled(selectedSize == nil)
             .padding(.bottom, 30)
         }
         .padding(.horizontal, 24)
         .background(Color(UIColor.systemBackground))
-        .fullScreenCover(isPresented: $showConfirmation) {
+        .fullScreenCover(isPresented: $showPlanSelection) {
             if let size = selectedSize {
-                LockerConfirmationView(
+                PlanSelectionView(
                     rental: LockerRental(
                         id: UUID().uuidString,
                         shopName: location.name,
@@ -151,7 +200,12 @@ struct LockerSelectionView: View {
                     ),
                     location: location
                 )
+                .transition(.move(edge: .trailing))
             }
+        }
+        .fullScreenCover(isPresented: $showPlansInfo) {
+            PlanSelectionView(isInformationOnly: true)
+                .transition(.opacity)
         }
     }
 }

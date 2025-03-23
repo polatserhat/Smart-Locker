@@ -12,6 +12,14 @@ struct LockerConfirmationView: View {
     let rental: LockerRental
     let location: LockerLocation
     
+    private var basePrice: Double {
+        return rental.plan?.price ?? rental.size.basePrice
+    }
+    
+    private var totalPrice: Double {
+        return rental.totalPrice ?? (basePrice * 1.1)
+    }
+    
     var body: some View {
         VStack(spacing: 24) {
             // Header with back button
@@ -72,6 +80,29 @@ struct LockerConfirmationView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 
+                // Plan Info
+                if let plan = rental.plan {
+                    Divider()
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Selected Plan")
+                            .font(.headline)
+                            .foregroundColor(.gray)
+                        
+                        HStack {
+                            Text(plan.tier.rawValue)
+                                .font(.title3)
+                                .fontWeight(.semibold)
+                                .foregroundColor(plan.tier == .premium ? AppColors.primaryYellow : Color.blue)
+                            
+                            Text("- \(plan.duration.rawValue)")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                
                 if rental.rentalType == .reservation {
                     Divider()
                     
@@ -105,13 +136,13 @@ struct LockerConfirmationView: View {
                     HStack {
                         Text("Base Price")
                         Spacer()
-                        Text("$\(String(format: "%.2f", rental.size.basePrice))")
+                        Text("$\(String(format: "%.2f", basePrice))")
                     }
                     
                     HStack {
                         Text("Tax (10%)")
                         Spacer()
-                        Text("$\(String(format: "%.2f", rental.size.basePrice * 0.1))")
+                        Text("$\(String(format: "%.2f", basePrice * 0.1))")
                     }
                     
                     Divider()
@@ -120,7 +151,7 @@ struct LockerConfirmationView: View {
                         Text("Total")
                             .fontWeight(.semibold)
                         Spacer()
-                        Text("$\(String(format: "%.2f", rental.size.basePrice * 1.1))")
+                        Text("$\(String(format: "%.2f", totalPrice))")
                             .fontWeight(.semibold)
                     }
                 }
@@ -226,7 +257,12 @@ struct LockerConfirmationView: View {
             shopName: "Airport Terminal 1",
             size: LockerSize.medium,
             rentalType: RentalType.instant,
-            reservationDate: nil as Date?
+            reservationDate: nil as Date?,
+            startTime: nil,
+            endTime: nil,
+            status: .pending,
+            totalPrice: 15.0,
+            plan: Plan(tier: .standard, duration: .daily)
         ),
         location: LockerLocation(
             name: "Airport Terminal 1",

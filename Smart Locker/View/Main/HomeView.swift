@@ -31,6 +31,7 @@ struct HomeView: View {
     @State private var showLockerMap = false
     @State private var showReservation = false
     @State private var showProfile = false
+    @State private var showPlansInfo = false
     @EnvironmentObject private var authViewModel: AuthViewModel
     
     var body: some View {
@@ -116,6 +117,30 @@ struct HomeView: View {
                     .padding(.vertical, 8)
                 }
                 
+                // View Plans Button
+                Button(action: {
+                    showPlansInfo = true
+                }) {
+                    HStack {
+                        Image(systemName: "info.circle.fill")
+                            .font(.system(size: 20))
+                        Text("View Available Plans")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundColor(AppColors.primaryBlack)
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 16)
+                    .background(Color.white)
+                    .cornerRadius(10)
+                    .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(AppColors.primaryYellow, lineWidth: 1)
+                    )
+                }
+                .padding(.vertical, 8)
+                
                 Spacer()
                 
                 // Locker Illustration and CTA Buttons
@@ -174,6 +199,9 @@ struct HomeView: View {
             }
             .fullScreenCover(isPresented: $showProfile) {
                 ProfilePageView()
+            }
+            .fullScreenCover(isPresented: $showPlansInfo) {
+                PlanSelectionView(isInformationOnly: true)
             }
         }
     }

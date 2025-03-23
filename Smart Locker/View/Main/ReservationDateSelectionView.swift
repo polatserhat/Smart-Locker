@@ -16,6 +16,17 @@ struct ReservationDateSelectionView: View {
         return formatter
     }()
     
+    // Helper function to check if a date is in the past
+    private func isDateInPast(_ date: Date) -> Bool {
+        let today = calendar.startOfDay(for: Date())
+        return date < today
+    }
+    
+    // Helper function to check if a date is selectable
+    private func isDateSelectable(_ date: Date) -> Bool {
+        !isDateInPast(date) && calendar.isDate(date, equalTo: currentMonth, toGranularity: .month)
+    }
+    
     var body: some View {
         VStack(spacing: 24) {
             // Header with back button
@@ -42,8 +53,9 @@ struct ReservationDateSelectionView: View {
             HStack {
                 Button(action: previousMonth) {
                     Image(systemName: "chevron.left")
-                        .foregroundColor(AppColors.primaryBlack)
+                        .foregroundColor(isPreviousMonthAvailable ? AppColors.primaryBlack : Color.gray)
                 }
+                .disabled(!isPreviousMonthAvailable)
                 
                 Spacer()
                 
@@ -78,14 +90,27 @@ struct ReservationDateSelectionView: View {
                 ForEach(days, id: \.self) { date in
                     if calendar.isDate(date, equalTo: currentMonth, toGranularity: .month) {
                         Button(action: {
-                            toggleDate(date)
+                            if isDateSelectable(date) {
+                                toggleDate(date)
+                            }
                         }) {
                             Text(dateFormatter.string(from: date))
                                 .frame(maxWidth: .infinity, minHeight: 40)
                                 .background(selectedDates.contains(date) ? AppColors.primaryYellow : Color.clear)
-                                .foregroundColor(selectedDates.contains(date) ? .white : .primary)
+                                .foregroundColor(
+                                    isDateInPast(date) 
+                                    ? .gray.opacity(0.5) 
+                                    : (selectedDates.contains(date) ? .white : .primary)
+                                )
                                 .cornerRadius(8)
+                                .overlay(
+                                    isDateInPast(date) ?
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                    : nil
+                                )
                         }
+                        .disabled(!isDateSelectable(date))
                     } else {
                         Text(dateFormatter.string(from: date))
                             .font(.system(.body, design: .rounded))
@@ -154,6 +179,12 @@ struct ReservationDateSelectionView: View {
         }
     }
     
+    private var isPreviousMonthAvailable: Bool {
+        let today = Date()
+        let firstDayOfCurrentMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: currentMonth))!
+        return firstDayOfCurrentMonth >= calendar.startOfDay(for: today)
+    }
+    
     private func toggleDate(_ date: Date) {
         if selectedDates.contains(date) {
             selectedDates.remove(date)
@@ -163,7 +194,8 @@ struct ReservationDateSelectionView: View {
     }
     
     private func previousMonth() {
-        if let newDate = calendar.date(byAdding: .month, value: -1, to: currentMonth) {
+        if let newDate = calendar.date(byAdding: .month, value: -1, to: currentMonth),
+           isPreviousMonthAvailable {
             currentMonth = newDate
         }
     }

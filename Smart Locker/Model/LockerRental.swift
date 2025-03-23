@@ -55,6 +55,7 @@ struct LockerRental: Identifiable, Codable {
     var endTime: Date?
     var status: RentalStatus = .pending
     var totalPrice: Double?
+    var plan: Plan?
     
     enum RentalStatus: String, Codable {
         case pending = "Pending"
@@ -73,6 +74,23 @@ struct LockerRental: Identifiable, Codable {
         case endTime
         case status
         case totalPrice
+        case plan
+    }
+    
+    // Custom initializer to fix Codable issue with default values
+    init(id: String, shopName: String, size: LockerSize, rentalType: RentalType, 
+         reservationDate: Date? = nil, startTime: Date? = nil, endTime: Date? = nil, 
+         status: RentalStatus = .pending, totalPrice: Double? = nil, plan: Plan? = nil) {
+        self.id = id
+        self.shopName = shopName
+        self.size = size
+        self.rentalType = rentalType
+        self.reservationDate = reservationDate
+        self.startTime = startTime
+        self.endTime = endTime
+        self.status = status
+        self.totalPrice = totalPrice
+        self.plan = plan
     }
     
     var isRefundable: Bool {
