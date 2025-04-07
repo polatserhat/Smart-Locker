@@ -7,6 +7,7 @@ class AuthViewModel: ObservableObject {
     @Published var currentUser: User?
     @Published var errorMessage: String?
     @Published var isLoading = false
+    @Published var navigateToHome = false
     
     private let auth = Auth.auth()
     private let firestore = Firestore.firestore()

@@ -37,6 +37,14 @@ struct MainView: View {
         Group {
             if authViewModel.isAuthenticated {
                 HomeView()
+                    .onReceive(authViewModel.$navigateToHome) { navigate in
+                        if navigate {
+                            // Reset the flag after navigation
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                authViewModel.navigateToHome = false
+                            }
+                        }
+                    }
             } else {
                 OnboardingView()
             }
