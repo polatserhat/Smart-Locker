@@ -7,10 +7,15 @@
 
 import SwiftUI
 
+// Import Profile views directly (they're in a different directory)
+import SwiftUI
+
 struct ProfilePageView: View {
     @AppStorage("isDarkMode") private var isDarkMode: Bool = false
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var authViewModel: AuthViewModel
+    @State private var showUpdateEmail = false
+    @State private var showUpdatePassword = false
     
     var body: some View {
         NavigationView {
@@ -60,13 +65,19 @@ struct ProfilePageView: View {
                             NavigationLink {
                                 Text("QR Code Screen")
                             } label: {
-                                SettingsRow(icon: "qrcode", title: "QR Code")
+                                SettingsRow(icon: "qrcode", title: "Current Locker")
                             }
                             
-                            NavigationLink {
-                                Text("Password Change Screen")
-                            } label: {
-                                SettingsRow(icon: "key.fill", title: "Change Password")
+                            Button(action: {
+                                showUpdateEmail = true
+                            }) {
+                                SettingsRow(icon: "envelope.fill", title: "Update Email")
+                            }
+                            
+                            Button(action: {
+                                showUpdatePassword = true
+                            }) {
+                                SettingsRow(icon: "key.fill", title: "Update Password")
                             }
                         }
                         
@@ -126,6 +137,14 @@ struct ProfilePageView: View {
             }
             .background(Color(UIColor.systemBackground))
             .navigationBarHidden(true)
+            .fullScreenCover(isPresented: $showUpdateEmail) {
+                UpdateEmailView()
+                    .environmentObject(authViewModel)
+            }
+            .fullScreenCover(isPresented: $showUpdatePassword) {
+                UpdatePasswordView()
+                    .environmentObject(authViewModel)
+            }
         }
         .preferredColorScheme(isDarkMode ? .dark : .light)
     }

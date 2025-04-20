@@ -117,23 +117,35 @@ struct PaymentView: View {
             }
             
             // CTA Buttons
-            VStack(spacing: 12) {
+            VStack(spacing: 16) {
                 Button(action: {
                     processPayment()
                 }) {
                     if isProcessing {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .frame(height: 24)
                     } else {
-                        Text("Confirm & Pay")
-                            .fontWeight(.semibold)
+                        HStack {
+                            Image(systemName: "creditcard.fill")
+                                .font(.system(size: 20))
+                            
+                            Text("Complete Payment")
+                                .fontWeight(.semibold)
+                            
+                            if !isProcessing {
+                                Image(systemName: "arrow.right")
+                                    .font(.system(size: 16))
+                            }
+                        }
+                        .foregroundColor(.white)
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .padding()
+                .padding(.vertical, 16)
                 .background(Color.black)
-                .foregroundColor(.white)
-                .cornerRadius(12)
+                .cornerRadius(16)
+                .shadow(color: Color.black.opacity(0.2), radius: 5)
                 .disabled(isProcessing)
                 
                 Button(action: {
@@ -142,9 +154,11 @@ struct PaymentView: View {
                     Text("Go Back")
                         .fontWeight(.medium)
                         .foregroundColor(.gray)
+                        .padding(.vertical, 8)
                 }
             }
-            .padding(.bottom, 30)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 50)  // Increased bottom padding for easier access
         }
         .padding(.horizontal, 24)
         .background(Color(UIColor.systemBackground))

@@ -26,6 +26,10 @@ struct SmartLockerApp: App {
             MainView()
                 .preferredColorScheme(isDarkMode ? .dark : .light)
                 .environmentObject(authViewModel) // ✅ Providing AuthViewModel to All Views
+                .onAppear {
+                    // Ensure shared instance is set
+                    AuthViewModel.shared = authViewModel
+                }
         }
     }
 }

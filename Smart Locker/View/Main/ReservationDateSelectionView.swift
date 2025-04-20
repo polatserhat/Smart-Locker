@@ -132,7 +132,7 @@ struct ReservationDateSelectionView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(Array(selectedDates).sorted(), id: \.self) { date in
-                                Text(date.formatted(date: .long, time: .omitted))
+                                Text(date.formatted(.dateTime.day().month().year()))
                                     .font(.subheadline)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 6)
@@ -171,6 +171,7 @@ struct ReservationDateSelectionView: View {
         .background(Color(UIColor.systemBackground))
         .fullScreenCover(isPresented: $showLocationSelection) {
             LockerMapView(reservationDates: selectedDates)
+                .environmentObject(AuthViewModel.shared ?? AuthViewModel())
         }
         .alert("Error", isPresented: $showError) {
             Button("OK", role: .cancel) {}

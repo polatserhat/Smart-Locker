@@ -113,7 +113,7 @@ struct LockerConfirmationView: View {
                             .foregroundColor(.gray)
                         
                         if let date = rental.reservationDate {
-                            Text(date.formatted(date: .long, time: .shortened))
+                            Text(date.formatted(.dateTime.day().month().year().hour().minute()))
                                 .font(.title3)
                                 .fontWeight(.semibold)
                         }
@@ -191,18 +191,37 @@ struct LockerConfirmationView: View {
                 if isProcessing {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .frame(height: 24)
                 } else {
-                    Text(rental.rentalType == .reservation ? "Confirm Reservation" : "Proceed to Payment")
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(AppColors.primaryBlack)
-                        .cornerRadius(12)
+                    HStack(spacing: 16) {
+                        Image(systemName: rental.rentalType == .reservation ? "calendar.badge.checkmark" : "creditcard.fill")
+                            .font(.system(size: 20))
+                        
+                        Text(rental.rentalType == .reservation ? "Confirm Reservation" : "Proceed to Payment")
+                            .fontWeight(.semibold)
+                        
+                        if !isProcessing {
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 16))
+                        }
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [AppColors.primaryBlack, Color(UIColor.darkGray)]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
                 }
             }
             .disabled(isProcessing)
-            .padding(.bottom, 30)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 50)
         }
         .padding(.horizontal, 24)
         .background(Color(UIColor.systemBackground))
