@@ -6,6 +6,7 @@ struct CategoryButton: View {
     let isSelected: Bool
     let action: () -> Void
     
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
@@ -86,37 +87,7 @@ struct HomeView: View {
                         .font(.largeTitle)
                         .fontWeight(.black)
                 }
-                
-                // Category Buttons
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        CategoryButton(
-                            icon: "airplane",
-                            title: "Airports",
-                            isSelected: selectedCategory == 0
-                        ) {
-                            selectedCategory = 0
-                        }
-                        
-                        CategoryButton(
-                            icon: "tram.fill",
-                            title: "Stations",
-                            isSelected: selectedCategory == 1
-                        ) {
-                            selectedCategory = 1
-                        }
-                        
-                        CategoryButton(
-                            icon: "building.2.fill",
-                            title: "City Centers",
-                            isSelected: selectedCategory == 2
-                        ) {
-                            selectedCategory = 2
-                        }
-                    }
-                    .padding(.vertical, 8)
-                }
-                
+            
                 // View Plans Button
                 Button(action: {
                     showPlansInfo = true
@@ -212,4 +183,4 @@ struct HomeView_Previews: PreviewProvider {
         HomeView()
             .environmentObject(AuthViewModel())
     }
-} 
+}

@@ -20,10 +20,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 struct SmartLockerApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var authViewModel = AuthViewModel() // ✅ Ensuring Singleton Instance
-
+    @AppStorage("isDarkMode") private var isDarkMode = false
     var body: some Scene {
         WindowGroup {
             MainView()
+                .preferredColorScheme(isDarkMode ? .dark : .light)
                 .environmentObject(authViewModel) // ✅ Providing AuthViewModel to All Views
         }
     }

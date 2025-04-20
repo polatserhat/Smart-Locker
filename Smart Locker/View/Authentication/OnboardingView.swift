@@ -20,6 +20,21 @@ struct OnboardingView: View {
             image: "locker.wifi",
             title: "",
             description: "Use our app to easily access lockers and have an effortless trip."
+        ),
+        OnboardingStep(
+            image: "airplane",
+            title: "Airports",
+            description: "You can find lockers in major airports for convenient luggage storage."
+        ),
+        OnboardingStep(
+            image: "tram.fill",
+            title: "Stations",
+            description: "Lockers are available in many bus/train stations to ease your journey."
+        ),
+        OnboardingStep(
+            image: "building.2.fill",
+            title: "City Centers",
+            description: "Drop your bags in city centers and enjoy hassle-free travel."
         )
     ]
     
@@ -95,4 +110,4 @@ struct OnboardingView_Previews: PreviewProvider {
     static var previews: some View {
         OnboardingView()
     }
-} 
+}
