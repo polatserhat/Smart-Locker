@@ -25,6 +25,10 @@ struct SmartLockerApp: App {
         WindowGroup {
             MainView()
                 .environmentObject(authViewModel) // ✅ Providing AuthViewModel to All Views
+                .onAppear {
+                    // Ensure shared instance is set
+                    AuthViewModel.shared = authViewModel
+                }
         }
     }
 }

@@ -9,11 +9,18 @@ class AuthViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var navigateToHome = false
     
+    // Add a static shared instance
+    static var shared: AuthViewModel?
+    
     private let auth = Auth.auth()
     private let firestore = Firestore.firestore()
     
     init() {
         setupAuthStateListener()
+        // Set the shared instance if it doesn't exist
+        if AuthViewModel.shared == nil {
+            AuthViewModel.shared = self
+        }
     }
     
     private func setupAuthStateListener() {
@@ -198,6 +205,129 @@ class AuthViewModel: ObservableObject {
             return "Account not found. Please sign up"
         default:
             return "An error occurred. Please try again"
+        }
+    }
+    
+    // Add methods for updating user profile data
+    
+    func updateUserEmail(newEmail: String, currentPassword: String, completion: @escaping (Bool, String?) -> Void) {
+        guard let user = Auth.auth().currentUser, let currentEmail = user.email else {
+            completion(false, "User not logged in")
+            return
+        }
+        
+        isLoading = true
+        errorMessage = nil
+        
+        // Re-authenticate the user first
+        let credential = EmailAuthProvider.credential(withEmail: currentEmail, password: currentPassword)
+        
+        user.reauthenticate(with: credential) { [weak self] _, error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    let errorMessage = "Authentication failed: \(error.localizedDescription)"
+                    self.errorMessage = errorMessage
+                    completion(false, errorMessage)
+                }
+                return
+            }
+            
+            // Now update the email
+            user.updateEmail(to: newEmail) { [weak self] error in
+                guard let self = self else { return }
+                
+                if let error = error {
+                    DispatchQueue.main.async {
+                        self.isLoading = false
+                        let errorMessage = "Failed to update email: \(error.localizedDescription)"
+                        self.errorMessage = errorMessage
+                        completion(false, errorMessage)
+                    }
+                    return
+                }
+                
+                // Update Firestore user document
+                if let userId = self.currentUser?.id {
+                    self.firestore.collection("users").document(userId).updateData([
+                        "email": newEmail,
+                        "updatedAt": FieldValue.serverTimestamp()
+                    ]) { error in
+                        DispatchQueue.main.async {
+                            self.isLoading = false
+                            
+                            if let error = error {
+                                let errorMessage = "Failed to update profile: \(error.localizedDescription)"
+                                self.errorMessage = errorMessage
+                                completion(false, errorMessage)
+                            } else {
+                                // Update local user object
+                                if let currentUser = self.currentUser {
+                                    let updatedUser = User(
+                                        id: currentUser.id,
+                                        name: currentUser.name,
+                                        email: newEmail,
+                                        profileImageUrl: currentUser.profileImageUrl
+                                    )
+                                    self.currentUser = updatedUser
+                                }
+                                completion(true, nil)
+                            }
+                        }
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        self.isLoading = false
+                        completion(true, nil)
+                    }
+                }
+            }
+        }
+    }
+    
+    func updateUserPassword(currentPassword: String, newPassword: String, completion: @escaping (Bool, String?) -> Void) {
+        guard let user = Auth.auth().currentUser, let email = user.email else {
+            completion(false, "User not logged in")
+            return
+        }
+        
+        isLoading = true
+        errorMessage = nil
+        
+        // Re-authenticate the user first
+        let credential = EmailAuthProvider.credential(withEmail: email, password: currentPassword)
+        
+        user.reauthenticate(with: credential) { [weak self] _, error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    let errorMessage = "Authentication failed: \(error.localizedDescription)"
+                    self.errorMessage = errorMessage
+                    completion(false, errorMessage)
+                }
+                return
+            }
+            
+            // Now update the password
+            user.updatePassword(to: newPassword) { [weak self] error in
+                guard let self = self else { return }
+                
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    
+                    if let error = error {
+                        let errorMessage = "Failed to update password: \(error.localizedDescription)"
+                        self.errorMessage = errorMessage
+                        completion(false, errorMessage)
+                    } else {
+                        completion(true, nil)
+                    }
+                }
+            }
         }
     }
 }

@@ -89,11 +89,12 @@ struct PaymentConfirmationView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
                 .background(AppColors.primaryYellow)
-                .cornerRadius(12)
+                .cornerRadius(16)
+                .shadow(color: Color.black.opacity(0.2), radius: 5)
             }
             
             // Action Buttons
-            HStack(spacing: 12) {
+            HStack(spacing: 16) {
                 // View Reservations Button
                 Button(action: {
                     // Navigate to reservations
@@ -106,7 +107,8 @@ struct PaymentConfirmationView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(AppColors.primaryBlack)
-                    .cornerRadius(12)
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.2), radius: 5)
                 }
                 
                 // Return Home Button
@@ -130,12 +132,13 @@ struct PaymentConfirmationView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(AppColors.primaryYellow)
-                    .cornerRadius(12)
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.2), radius: 5)
                 }
             }
         }
-        .padding(.horizontal, 24)
-        .padding(.bottom, 32)
+        .padding(.horizontal, 20)
+        .padding(.bottom, 50)
         .background(
             Color(UIColor.systemBackground)
                 .shadow(color: Color.black.opacity(0.05), radius: 8, y: -4)

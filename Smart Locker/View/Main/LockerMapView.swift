@@ -46,9 +46,8 @@ struct LockerMapView: View {
     
     @State private var selectedLocation: LockerLocation?
     @State private var showingLockerDetails = false
-    @State private var selectedSize: LockerSize?
-    @State private var showConfirmation = false
     @State private var showingDirectionsSheet = false
+    @State private var navigateToLockerSelection = false
     
     // For reservation flow
     var reservationDates: Set<Date>?
@@ -120,7 +119,7 @@ struct LockerMapView: View {
                 Spacer()
             }
             
-            // Locker Details Sheet
+            // Location Details Sheet
             if showingLockerDetails {
                 Color.black.opacity(0.3)
                     .ignoresSafeArea()
@@ -155,61 +154,125 @@ struct LockerMapView: View {
                     
                     Divider()
                     
-                    // Size Options
+                    // Locker Availability Section
                     VStack(spacing: 16) {
-                        Text("Select Locker Size")
+                        Text("Available Lockers")
                             .font(.headline)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         
-                        ForEach(LockerSize.allCases, id: \.self) { size in
-                            Button(action: {
-                                selectedSize = size
-                            }) {
-                                HStack {
-                                    VStack(alignment: .leading) {
-                                        Text(size.rawValue)
-                                            .font(.headline)
-                                        Text(size.dimensions)
-                                            .font(.subheadline)
-                                            .foregroundColor(.gray)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    Text("$\(String(format: "%.2f", size.basePrice))")
-                                        .font(.headline)
-                                        .foregroundColor(AppColors.primaryBlack)
-                                    
-                                    if selectedSize == size {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundColor(AppColors.primaryYellow)
-                                    }
-                                }
-                                .padding()
-                                .background(Color.white)
-                                .cornerRadius(12)
-                                .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        HStack(spacing: 12) {
+                            // Small Lockers
+                            VStack {
+                                Text("Small")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                                
+                                Text("27")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(AppColors.primaryBlack)
+                                
+                                Text("Available")
+                                    .font(.caption)
+                                    .foregroundColor(.green)
                             }
-                            .foregroundColor(AppColors.primaryBlack)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .shadow(color: Color.black.opacity(0.05), radius: 5)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                            )
+                            
+                            // Medium Lockers
+                            VStack {
+                                Text("Medium")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                                
+                                Text("24")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(AppColors.primaryBlack)
+                                
+                                Text("Available")
+                                    .font(.caption)
+                                    .foregroundColor(.green)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .shadow(color: Color.black.opacity(0.05), radius: 5)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                            )
+                            
+                            // Large Lockers
+                            VStack {
+                                Text("Large")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                                
+                                Text("29")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(AppColors.primaryBlack)
+                                
+                                Text("Available")
+                                    .font(.caption)
+                                    .foregroundColor(.green)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .shadow(color: Color.black.opacity(0.05), radius: 5)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                            )
                         }
                     }
                     
-                    // Rent Button
+                    // Shop Hours and Extra Info
+                    VStack(spacing: 12) {
+                        HStack {
+                            Image(systemName: "clock")
+                                .foregroundColor(AppColors.primaryYellow)
+                            Text("Open 24/7")
+                                .font(.subheadline)
+                        }
+                        
+                        HStack {
+                            Image(systemName: "shield.checkered")
+                                .foregroundColor(AppColors.primaryYellow)
+                            Text("Security Cameras")
+                                .font(.subheadline)
+                        }
+                    }
+                    .padding(.vertical, 8)
+                    
+                    Spacer()
+                    
+                    // Select Locker Button
                     Button(action: {
-                        if let location = selectedLocation, let size = selectedSize {
+                        if let location = selectedLocation {
                             showingLockerDetails = false
-                            showConfirmation = true
+                            navigateToLockerSelection = true
                         }
                     }) {
-                        Text(isReservationFlow ? "Confirm Selection" : "Rent Your Locker")
+                        Text("Continue to Select Locker")
                             .fontWeight(.bold)
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(selectedSize == nil ? Color.gray : AppColors.primaryBlack)
+                            .background(AppColors.primaryBlack)
                             .cornerRadius(16)
-                            .opacity(selectedSize == nil ? 0.5 : 1)
                     }
-                    .disabled(selectedSize == nil)
                 }
                 .padding(24)
                 .background(Color.white)
@@ -220,18 +283,14 @@ struct LockerMapView: View {
                 .animation(.spring(), value: showingLockerDetails)
             }
         }
-        .fullScreenCover(isPresented: $showConfirmation) {
-            if let location = selectedLocation, let size = selectedSize {
-                LockerConfirmationView(
-                    rental: LockerRental(
-                        id: UUID().uuidString,
-                        shopName: location.name,
-                        size: size,
-                        rentalType: isReservationFlow ? .reservation : .instant,
-                        reservationDate: reservationDates?.first
-                    ),
-                    location: location
+        .fullScreenCover(isPresented: $navigateToLockerSelection) {
+            if let location = selectedLocation {
+                LockerSelectionView(
+                    location: location,
+                    rentalType: isReservationFlow ? .reservation : .instant,
+                    reservationDates: reservationDates
                 )
+                .environmentObject(AuthViewModel.shared ?? AuthViewModel())
             }
         }
         .confirmationDialog(
