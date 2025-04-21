@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Firebase
+import FirebaseAuth
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
@@ -20,14 +21,21 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 struct SmartLockerApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var authViewModel = AuthViewModel() // ✅ Ensuring Singleton Instance
+    @StateObject private var reservationViewModel = ReservationViewModel() // ✅ Singleton for Reservations
 
     var body: some Scene {
         WindowGroup {
             MainView()
                 .environmentObject(authViewModel) // ✅ Providing AuthViewModel to All Views
+                .environmentObject(reservationViewModel) // ✅ Providing ReservationViewModel to All Views
                 .onAppear {
                     // Ensure shared instance is set
                     AuthViewModel.shared = authViewModel
+                    
+                    // If user is already logged in, fetch their rentals
+                    if let userId = Auth.auth().currentUser?.uid {
+                        reservationViewModel.fetchRentals(for: userId)
+                    }
                 }
         }
     }
@@ -59,7 +67,11 @@ struct MainView: View {
 // ✅ Preview Provider for MainView
 struct MainView_Previews: PreviewProvider {
     static var previews: some View {
-        MainView()
-            .environmentObject(AuthViewModel())
+        let mockAuthViewModel = AuthViewModel()
+        let mockReservationViewModel = ReservationViewModel()
+        
+        return MainView()
+            .environmentObject(mockAuthViewModel)
+            .environmentObject(mockReservationViewModel)
     }
 }

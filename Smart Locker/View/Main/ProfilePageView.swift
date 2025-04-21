@@ -14,8 +14,11 @@ struct ProfilePageView: View {
     @State private var isDarkMode: Bool = false
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var authViewModel: AuthViewModel
+    @EnvironmentObject private var reservationViewModel: ReservationViewModel
     @State private var showUpdateEmail = false
     @State private var showUpdatePassword = false
+    @State private var showRentalHistory = false
+    @State private var showActiveRentals = false
     
     var body: some View {
         NavigationView {
@@ -97,16 +100,16 @@ struct ProfilePageView: View {
                         
                         // Bookings Section
                         SettingsSection(title: "Bookings") {
-                            NavigationLink {
-                                Text("Active Reservations")
-                            } label: {
-                                SettingsRow(icon: "calendar", title: "Active Reservations", value: "2")
+                            Button(action: {
+                                showActiveRentals = true
+                            }) {
+                                SettingsRow(icon: "calendar", title: "Active Rentals", value: "\(reservationViewModel.currentRentalCount)")
                             }
                             
-                            NavigationLink {
-                                Text("Booking History")
-                            } label: {
-                                SettingsRow(icon: "clock.fill", title: "History")
+                            Button(action: {
+                                showRentalHistory = true
+                            }) {
+                                SettingsRow(icon: "clock.fill", title: "Rental History", value: "\(reservationViewModel.pastRentalCount)")
                             }
                         }
                     }
@@ -144,6 +147,14 @@ struct ProfilePageView: View {
             .fullScreenCover(isPresented: $showUpdatePassword) {
                 UpdatePasswordView()
                     .environmentObject(authViewModel)
+            }
+            .fullScreenCover(isPresented: $showRentalHistory) {
+                RentalHistoryView()
+                    .environmentObject(reservationViewModel)
+            }
+            .fullScreenCover(isPresented: $showActiveRentals) {
+                ActiveRentalsView()
+                    .environmentObject(reservationViewModel)
             }
         }
     }
@@ -246,8 +257,11 @@ struct ProfilePageView_Previews: PreviewProvider {
             profileImageUrl: nil
         )
         
+        let mockReservationViewModel = ReservationViewModel()
+        
         return ProfilePageView()
             .environmentObject(mockAuthViewModel)
+            .environmentObject(mockReservationViewModel)
     }
 }
 

@@ -63,60 +63,139 @@ struct LockerMapView: View {
             // Map with annotations
             Map(coordinateRegion: $region, annotationItems: locations) { location in
                 MapAnnotation(coordinate: location.coordinate) {
-                    VStack(spacing: 4) {
+                    VStack(spacing: 0) {
                         Button(action: {
                             selectedLocation = location
                             showingLockerDetails = true
                         }) {
-                            Image(systemName: "mappin.circle.fill")
-                                .font(.system(size: 30))
-                                .foregroundColor(AppColors.primaryBlack)
-                                .background(Circle().fill(.white))
-                                .shadow(radius: 5)
+                            ZStack {
+                                // Shadow circle underneath
+                                Circle()
+                                    .fill(Color.black.opacity(0.1))
+                                    .frame(width: 44, height: 44)
+                                    .offset(y: 1)
+                                
+                                // Main circular pin
+                                Circle()
+                                    .fill(Color.white)
+                                    .frame(width: 42, height: 42)
+                                    .overlay(
+                                        Circle()
+                                            .stroke(AppColors.primaryYellow, lineWidth: 2)
+                                    )
+                                
+                                // Icon inside pin
+                                Image(systemName: "lock.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(AppColors.primaryBlack)
+                            }
                         }
                         
-                        // Location name label
-                        Text(location.name)
-                            .font(.caption)
-                            .padding(6)
-                            .background(Color.white)
-                            .cornerRadius(8)
-                            .shadow(radius: 2)
+                        // Label shown when tapped
+                        if selectedLocation?.id == location.id {
+                            Text(location.name)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.white)
+                                        .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+                                )
+                                .offset(y: 5)
+                                .transition(.opacity)
+                                .animation(.easeInOut(duration: 0.2), value: selectedLocation?.id == location.id)
+                        }
                     }
                 }
             }
             .ignoresSafeArea()
             
-            // Header
+            // Search box at the top
             VStack {
-                HStack {
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Image(systemName: "arrow.left")
-                            .font(.system(size: 20, weight: .medium))
+                VStack(spacing: 0) {
+                    // Header with back button and title
+                    HStack {
+                        Button(action: {
+                            dismiss()
+                        }) {
+                            Image(systemName: "arrow.left")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(AppColors.primaryBlack)
+                                .frame(width: 36, height: 36)
+                                .background(Color.white)
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 1)
+                        }
+                        
+                        Spacer()
+                        
+                        Text(isReservationFlow ? "Select Location" : "Find a Locker")
+                            .font(.headline)
                             .foregroundColor(AppColors.primaryBlack)
-                            .frame(width: 40, height: 40)
-                            .background(Color.white)
-                            .clipShape(Circle())
-                            .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            // This is a placeholder UI element for visual balance
+                        }) {
+                            Color.clear
+                                .frame(width: 36, height: 36)
+                        }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 8)
                     
-                    Spacer()
-                    
-                    Text(isReservationFlow ? "Select Location" : "Locker Shops Map")
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                    
-                    Spacer()
-                    
-                    Color.clear
-                        .frame(width: 40, height: 40)
+                    // Search bar (non-functional, just for design)
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.gray)
+                        
+                        Text("Search for a location")
+                            .foregroundColor(.gray)
+                            .font(.subheadline)
+                        
+                        Spacer()
+                    }
+                    .padding(12)
+                    .background(Color.white)
+                    .cornerRadius(10)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
                 }
-                .padding()
-                .background(Color.white.opacity(0.9))
+                .background(Color.white)
+                .cornerRadius(16)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 2)
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
                 
                 Spacer()
+                
+                // Bottom status bar showing number of locations
+                HStack {
+                    Text("\(locations.count) locations near you")
+                        .font(.footnote)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        // Center map on user location (placeholder)
+                    }) {
+                        Image(systemName: "location.fill")
+                            .foregroundColor(.white)
+                            .frame(width: 32, height: 32)
+                            .background(AppColors.primaryYellow)
+                            .clipShape(Circle())
+                    }
+                }
+                .padding(12)
+                .background(AppColors.primaryBlack)
+                .cornerRadius(12)
+                .padding(16)
             }
             
             // Location Details Sheet
@@ -127,134 +206,127 @@ struct LockerMapView: View {
                         showingLockerDetails = false
                     }
                 
-                VStack(spacing: 24) {
-                    // Shop Name and Address
-                    VStack(spacing: 8) {
-                        Text(selectedLocation?.name ?? "")
-                            .font(.title3)
-                            .fontWeight(.bold)
+                VStack(spacing: 20) {
+                    // Header with handle line
+                    VStack(spacing: 16) {
+                        // Draggable handle
+                        RoundedRectangle(cornerRadius: 2.5)
+                            .fill(Color.gray.opacity(0.5))
+                            .frame(width: 40, height: 5)
                         
-                        Text(selectedLocation?.address ?? "")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                            .multilineTextAlignment(.center)
-                    }
-                    
-                    // Directions Button
-                    Button(action: {
-                        showingDirectionsSheet = true
-                    }) {
-                        HStack {
-                            Image(systemName: "location.fill")
-                            Text("Get Directions")
+                        // Shop name and address
+                        VStack(spacing: 4) {
+                            HStack {
+                                Text(selectedLocation?.name ?? "")
+                                    .font(.title3)
+                                    .fontWeight(.bold)
+                                
+                                Spacer()
+                                
+                                Button(action: {
+                                    showingDirectionsSheet = true
+                                }) {
+                                    Image(systemName: "arrow.triangle.turn.up.right.diamond.fill")
+                                        .font(.system(size: 22))
+                                        .foregroundColor(AppColors.primaryYellow)
+                                }
+                            }
+                            
+                            HStack {
+                                Text(selectedLocation?.address ?? "")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                                
+                                Spacer()
+                            }
                         }
-                        .foregroundColor(AppColors.primaryYellow)
-                        .padding(.vertical, 8)
                     }
                     
                     Divider()
                     
                     // Locker Availability Section
-                    VStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 12) {
                         Text("Available Lockers")
                             .font(.headline)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .foregroundColor(AppColors.primaryBlack)
                         
                         HStack(spacing: 12) {
                             // Small Lockers
-                            VStack {
-                                Text("Small")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
-                                
-                                Text("27")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(AppColors.primaryBlack)
-                                
-                                Text("Available")
-                                    .font(.caption)
-                                    .foregroundColor(.green)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Color.white)
-                            .cornerRadius(12)
-                            .shadow(color: Color.black.opacity(0.05), radius: 5)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                            AvailabilityCard(
+                                size: "Small",
+                                count: 27,
+                                dimensions: "30 x 30 x 45 cm"
                             )
                             
                             // Medium Lockers
-                            VStack {
-                                Text("Medium")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
-                                
-                                Text("24")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(AppColors.primaryBlack)
-                                
-                                Text("Available")
-                                    .font(.caption)
-                                    .foregroundColor(.green)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Color.white)
-                            .cornerRadius(12)
-                            .shadow(color: Color.black.opacity(0.05), radius: 5)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                            AvailabilityCard(
+                                size: "Medium",
+                                count: 24,
+                                dimensions: "45 x 45 x 60 cm"
                             )
                             
                             // Large Lockers
-                            VStack {
-                                Text("Large")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
-                                
-                                Text("29")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(AppColors.primaryBlack)
-                                
-                                Text("Available")
-                                    .font(.caption)
-                                    .foregroundColor(.green)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Color.white)
-                            .cornerRadius(12)
-                            .shadow(color: Color.black.opacity(0.05), radius: 5)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                            AvailabilityCard(
+                                size: "Large",
+                                count: 29,
+                                dimensions: "60 x 60 x 90 cm"
                             )
                         }
                     }
                     
-                    // Shop Hours and Extra Info
-                    VStack(spacing: 12) {
-                        HStack {
-                            Image(systemName: "clock")
-                                .foregroundColor(AppColors.primaryYellow)
-                            Text("Open 24/7")
-                                .font(.subheadline)
-                        }
+                    // Amenities
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Amenities")
+                            .font(.headline)
+                            .foregroundColor(AppColors.primaryBlack)
                         
-                        HStack {
-                            Image(systemName: "shield.checkered")
-                                .foregroundColor(AppColors.primaryYellow)
-                            Text("Security Cameras")
-                                .font(.subheadline)
+                        HStack(spacing: 24) {
+                            // Opening hours
+                            VStack(spacing: 4) {
+                                Image(systemName: "clock.fill")
+                                    .foregroundColor(AppColors.primaryYellow)
+                                    .font(.system(size: 20))
+                                
+                                Text("24/7")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                            }
+                            
+                            // Security
+                            VStack(spacing: 4) {
+                                Image(systemName: "shield.fill")
+                                    .foregroundColor(AppColors.primaryYellow)
+                                    .font(.system(size: 20))
+                                
+                                Text("Secure")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                            }
+                            
+                            // Covered
+                            VStack(spacing: 4) {
+                                Image(systemName: "house.fill")
+                                    .foregroundColor(AppColors.primaryYellow)
+                                    .font(.system(size: 20))
+                                
+                                Text("Indoor")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                            }
+                            
+                            // Accessibility
+                            VStack(spacing: 4) {
+                                Image(systemName: "figure.roll")
+                                    .foregroundColor(AppColors.primaryYellow)
+                                    .font(.system(size: 20))
+                                
+                                Text("Accessible")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                            }
                         }
+                        .frame(maxWidth: .infinity)
                     }
-                    .padding(.vertical, 8)
                     
                     Spacer()
                     
@@ -265,22 +337,30 @@ struct LockerMapView: View {
                             navigateToLockerSelection = true
                         }
                     }) {
-                        Text("Continue to Select Locker")
+                        Text("Select This Location")
                             .fontWeight(.bold)
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(AppColors.primaryBlack)
-                            .cornerRadius(16)
+                            .padding(.vertical, 16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(AppColors.primaryBlack)
+                                    .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+                            )
                     }
                 }
                 .padding(24)
-                .background(Color.white)
-                .cornerRadius(24)
-                .shadow(color: Color.black.opacity(0.1), radius: 20, x: 0, y: 10)
-                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(Color.white)
+                )
+                .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
                 .transition(.move(edge: .bottom))
                 .animation(.spring(), value: showingLockerDetails)
+                .frame(maxHeight: 500)
+                .padding(.horizontal)
+                .padding(.bottom, -20)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
         }
         .fullScreenCover(isPresented: $navigateToLockerSelection) {
@@ -310,6 +390,50 @@ struct LockerMapView: View {
         } message: {
             Text("Choose your preferred navigation app")
         }
+    }
+}
+
+// Availability card component
+struct AvailabilityCard: View {
+    let size: String
+    let count: Int
+    let dimensions: String
+    
+    var body: some View {
+        VStack(spacing: 6) {
+            Text(size)
+                .font(.subheadline)
+                .fontWeight(.medium)
+            
+            Text("\(count)")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundColor(AppColors.primaryBlack)
+            
+            Text(dimensions)
+                .font(.caption2)
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+                .frame(height: 26)
+            
+            Text("Available")
+                .font(.system(size: 10))
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.green)
+                .cornerRadius(10)
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 8)
+        .frame(maxWidth: .infinity)
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+        )
     }
 }
 
