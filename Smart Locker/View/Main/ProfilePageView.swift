@@ -11,7 +11,7 @@ import SwiftUI
 import SwiftUI
 
 struct ProfilePageView: View {
-    @State private var isDarkMode: Bool = false
+    @AppStorage("isDarkMode") private var isDarkMode: Bool = false
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var authViewModel: AuthViewModel
     @EnvironmentObject private var reservationViewModel: ReservationViewModel
@@ -157,6 +157,7 @@ struct ProfilePageView: View {
                     .environmentObject(reservationViewModel)
             }
         }
+        .preferredColorScheme(isDarkMode ? .dark : .light)
     }
 }
 
@@ -264,4 +265,3 @@ struct ProfilePageView_Previews: PreviewProvider {
             .environmentObject(mockReservationViewModel)
     }
 }
-

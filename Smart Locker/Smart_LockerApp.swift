@@ -22,10 +22,12 @@ struct SmartLockerApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var authViewModel = AuthViewModel() // ✅ Ensuring Singleton Instance
     @StateObject private var reservationViewModel = ReservationViewModel() // ✅ Singleton for Reservations
+    @AppStorage("isDarkMode") private var isDarkMode = false
 
     var body: some Scene {
         WindowGroup {
             MainView()
+                .preferredColorScheme(isDarkMode ? .dark : .light)
                 .environmentObject(authViewModel) // ✅ Providing AuthViewModel to All Views
                 .environmentObject(reservationViewModel) // ✅ Providing ReservationViewModel to All Views
                 .onAppear {
