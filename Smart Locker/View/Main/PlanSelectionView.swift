@@ -116,8 +116,10 @@ struct PlanSelectionView: View {
                 VStack(spacing: 24) {
                     planTierSection
                     durationSection
-                    if selectedDuration == .hourly || selectedDuration == .daily {
+                    if selectedDuration == .hourly {
                         hoursSection
+                    } else if selectedDuration == .daily {
+                        dailyRentalInfoSection
                     }
                     featuresSection
                     
@@ -429,6 +431,31 @@ struct PlanSelectionView: View {
         .background(Color.white)
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.05), radius: 5)
+    }
+    
+    private var dailyRentalInfoSection: some View {
+        VStack(spacing: 12) {
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "info.circle.fill")
+                    .foregroundColor(selectedTier == .premium ? AppColors.primaryYellow : Color.blue)
+                    .font(.system(size: 16))
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("24-Hour Rental Period")
+                        .font(.headline)
+                    Text("Your rental will start immediately and end after 24 hours")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white)
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(0.05), radius: 5)
+            
+            totalPriceView
+        }
     }
     
     private var featuresSection: some View {
