@@ -85,25 +85,37 @@ struct Plan: Identifiable, Codable {
     var id: String
     var tier: PlanTier
     var duration: PlanDuration
+    var numberOfHours: Int?
+    var customPrice: Double?
     
     var price: Double {
+        if duration == .hourly, let hours = numberOfHours {
+            return tier.hourlyRate * Double(hours)
+        }
         return duration.getPrice(for: tier)
     }
     
     var totalHours: Int {
+        if duration == .hourly, let hours = numberOfHours {
+            return hours
+        }
         return duration.multiplier
     }
     
-    init(tier: PlanTier, duration: PlanDuration) {
+    init(tier: PlanTier, duration: PlanDuration, numberOfHours: Int? = nil, price: Double? = nil) {
         self.id = UUID().uuidString
         self.tier = tier
         self.duration = duration
+        self.numberOfHours = numberOfHours
+        self.customPrice = price
     }
     
     enum CodingKeys: String, CodingKey {
         case id
         case tier
         case duration
+        case numberOfHours
+        case customPrice
     }
     
     static var defaultPlan: Plan {

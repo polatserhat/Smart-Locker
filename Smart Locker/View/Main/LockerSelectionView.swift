@@ -52,7 +52,6 @@ struct LockerSelectionView: View {
     @State private var selectedSize: LockerSize?
     @State private var showPlanSelection = false
     @State private var showPlansInfo = false
-    @State private var showPaymentConfirmation = false
     @State private var showSizeSelectionHint = false
     
     let location: LockerLocation
@@ -210,32 +209,6 @@ struct LockerSelectionView: View {
                     .cornerRadius(12)
                 }
                 .disabled(selectedSize == nil)
-                
-                // Secondary action button
-                Button(action: {
-                    if let size = selectedSize {
-                        withAnimation {
-                            showPaymentConfirmation = true
-                        }
-                    } else {
-                        withAnimation {
-                            showSizeSelectionHint = true
-                        }
-                    }
-                }) {
-                    HStack {
-                        Text("Skip Plan & Proceed to Payment")
-                            .fontWeight(.medium)
-                        
-                        Image(systemName: "creditcard")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(selectedSize != nil ? AppColors.primaryYellow : Color.gray.opacity(0.5))
-                    .foregroundColor(AppColors.primaryBlack)
-                    .cornerRadius(12)
-                }
-                .disabled(selectedSize == nil)
             }
             .padding()
             .background(
@@ -264,22 +237,6 @@ struct LockerSelectionView: View {
         .fullScreenCover(isPresented: $showPlansInfo) {
             PlanSelectionView(isInformationOnly: true)
                 .environmentObject(AuthViewModel.shared ?? AuthViewModel())
-        }
-        .fullScreenCover(isPresented: $showPaymentConfirmation) {
-            if let size = selectedSize {
-                LockerConfirmationView(
-                    rental: LockerRental(
-                        id: UUID().uuidString,
-                        shopName: location.name,
-                        size: size,
-                        rentalType: rentalType,
-                        reservationDate: reservationDates?.first,
-                        plan: Plan(tier: .standard, duration: .daily) // Default plan
-                    ),
-                    location: location
-                )
-                .environmentObject(AuthViewModel.shared ?? AuthViewModel())
-            }
         }
     }
 }
