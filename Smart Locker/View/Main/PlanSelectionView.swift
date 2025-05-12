@@ -8,23 +8,15 @@ struct PlanSelectionView: View {
     @State private var selectedDuration: PlanDuration = .daily
     @State private var showConfirmation = false
     @State private var showPlanRequiredHint = false
-    @State private var selectedStartTime: Date = Calendar.current.date(bySettingHour: Calendar.current.component(.hour, from: Date()) + 1, minute: 0, second: 0, of: Date()) ?? Date()
-    @State private var selectedEndTime: Date = Calendar.current.date(bySettingHour: Calendar.current.component(.hour, from: Date()) + 2, minute: 0, second: 0, of: Date()) ?? Date()
     
     let rental: LockerRental
     let location: LockerLocation
     let isInformationOnly: Bool
     
-    // Calculate total hours between start and end time
-    private var selectedHours: Int {
-        let hours = Calendar.current.dateComponents([.hour], from: selectedStartTime, to: selectedEndTime).hour ?? 0
-        return max(1, hours)
-    }
-    
-    // Calculate total price based on duration and hours
+    // Calculate total price based on duration
     private var totalPrice: Double {
         if selectedDuration == .hourly {
-            return selectedTier.hourlyRate * Double(selectedHours)
+            return selectedTier.hourlyRate
         }
         return selectedDuration.getPrice(for: selectedTier)
     }
@@ -117,7 +109,7 @@ struct PlanSelectionView: View {
                     planTierSection
                     durationSection
                     if selectedDuration == .hourly {
-                        hoursSection
+                        hourlyRentalInfoSection
                     } else if selectedDuration == .daily {
                         dailyRentalInfoSection
                     }
@@ -146,7 +138,7 @@ struct PlanSelectionView: View {
             let plan = Plan(
                 tier: selectedTier,
                 duration: selectedDuration,
-                numberOfHours: selectedDuration == .hourly ? selectedHours : nil,
+                numberOfHours: selectedDuration == .hourly ? 1 : nil,
                 price: totalPrice
             )
             let updatedRental = LockerRental(
@@ -155,8 +147,8 @@ struct PlanSelectionView: View {
                 size: rental.size,
                 rentalType: rental.rentalType,
                 reservationDate: rental.reservationDate,
-                startTime: selectedDuration == .hourly ? selectedStartTime : nil,
-                endTime: selectedDuration == .hourly ? nil : nil,
+                startTime: selectedDuration == .hourly ? Date() : nil,
+                endTime: nil,
                 status: .active,
                 totalPrice: selectedDuration == .hourly ? nil : totalPrice,
                 plan: plan
@@ -352,96 +344,50 @@ struct PlanSelectionView: View {
         }
     }
     
-    private var hoursSection: some View {
-        VStack(spacing: 16) {
-            Text("Select Time Frame")
-                .font(.headline)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            VStack(spacing: 12) {
-                HStack(spacing: 12) {
-                    // Start Time
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Start")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                        
-                        DatePicker("", selection: $selectedStartTime, displayedComponents: .hourAndMinute)
-                            .labelsHidden()
-                            .frame(maxWidth: .infinity)
-                            .onChange(of: selectedStartTime) { newValue in
-                                if selectedEndTime <= newValue {
-                                    selectedEndTime = Calendar.current.date(byAdding: .hour, value: 1, to: newValue) ?? newValue
-                                }
-                            }
-                    }
-                    
-                    // End Time
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("End")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                        
-                        DatePicker("", selection: $selectedEndTime, displayedComponents: .hourAndMinute)
-                            .labelsHidden()
-                            .frame(maxWidth: .infinity)
-                            .onChange(of: selectedEndTime) { newValue in
-                                if newValue <= selectedStartTime {
-                                    selectedStartTime = Calendar.current.date(byAdding: .hour, value: -1, to: newValue) ?? newValue
-                                }
-                            }
-                    }
-                }
-                .padding()
-                .background(Color.white)
-                .cornerRadius(12)
-                .shadow(color: Color.black.opacity(0.05), radius: 5)
+    private var hourlyRentalInfoSection: some View {
+        VStack(spacing: 12) {
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "info.circle.fill")
+                    .foregroundColor(selectedTier == .premium ? AppColors.primaryYellow : Color.blue)
+                    .font(.system(size: 16))
                 
-                // Time Frame Summary
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Duration")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                        Text("\(selectedHours) hour\(selectedHours > 1 ? "s" : "")")
-                            .font(.headline)
-                    }
-                    
-                    Spacer()
-                    
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text("Rate")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                        Text("$\(String(format: "%.2f", selectedTier.hourlyRate))/hour")
-                            .font(.headline)
-                            .foregroundColor(selectedTier == .premium ? AppColors.primaryYellow : Color.blue)
-                    }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Pay-as-you-go Rental")
+                        .font(.headline)
+                    Text("Your rental will start immediately and you'll only be charged for the time you use")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
                 }
-                .padding()
-                .background(Color.white)
-                .cornerRadius(12)
-                .shadow(color: Color.black.opacity(0.05), radius: 5)
-                
-                totalPriceView
             }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white)
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(0.05), radius: 5)
+            
+            // Rate info
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Rate")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                    Text("$\(String(format: "%.2f", selectedTier.hourlyRate))/hour")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(selectedTier == .premium ? AppColors.primaryYellow : Color.blue)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "clock.fill")
+                    .font(.system(size: 24))
+                    .foregroundColor(selectedTier == .premium ? AppColors.primaryYellow : Color.blue)
+            }
+            .padding()
+            .background(Color.white)
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(0.05), radius: 5)
         }
-    }
-    
-    private var totalPriceView: some View {
-        HStack {
-            Text("Total Price:")
-                .font(.headline)
-            Spacer()
-            Text("$\(String(format: "%.2f", totalPrice))")
-                .font(.title3)
-                .fontWeight(.bold)
-                .foregroundColor(selectedTier == .premium ? AppColors.primaryYellow : Color.blue)
-        }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.05), radius: 5)
     }
     
     private var dailyRentalInfoSection: some View {
@@ -467,6 +413,22 @@ struct PlanSelectionView: View {
             
             totalPriceView
         }
+    }
+    
+    private var totalPriceView: some View {
+        HStack {
+            Text("Total Price:")
+                .font(.headline)
+            Spacer()
+            Text("$\(String(format: "%.2f", totalPrice))")
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundColor(selectedTier == .premium ? AppColors.primaryYellow : Color.blue)
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.05), radius: 5)
     }
     
     private var featuresSection: some View {
