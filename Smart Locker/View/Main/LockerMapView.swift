@@ -401,6 +401,10 @@ struct LockerMapView: View {
         .onAppear {
             viewModel.fetchLockerLocations()
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("RefreshLockerMap"))) { _ in
+            print("🔄 Refreshing locker map...")
+            viewModel.fetchLockerLocations()
+        }
     }
 }
 
@@ -415,39 +419,18 @@ class LockerMapViewModel: ObservableObject {
     func fetchLockerLocations() {
         print("🔍 Fetching locker locations...")
         
-        #if DEBUG
-        // Use sample data in debug mode
-        self.locations = LockerLocation.sampleLocations
-        if let firstLocation = self.locations.first {
-            self.region = MKCoordinateRegion(
-                center: firstLocation.coordinate,
-                span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-            )
-        }
-        return
-        #endif
-        
-        // First, get all unique location IDs
+        // Get all lockers and group by location
         db.collection("lockers")
-            .whereField("available", isEqualTo: true)  // Only fetch available lockers
             .getDocuments { [weak self] snapshot, error in
                 guard let self = self, let documents = snapshot?.documents else {
                     print("❌ Error fetching lockers: \(error?.localizedDescription ?? "unknown error")")
-                    // Fallback to sample data if Firebase fetch fails
-                    self?.locations = LockerLocation.sampleLocations
-                    if let firstLocation = self?.locations.first {
-                        self?.region = MKCoordinateRegion(
-                            center: firstLocation.coordinate,
-                            span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-                        )
-                    }
                     return
                 }
                 
-                print("📦 Found \(documents.count) available lockers")
+                print("📦 Found \(documents.count) lockers")
                 
                 // Group lockers by location
-                var locationDict: [String: (name: String, address: String, coordinates: CLLocationCoordinate2D, counts: [String: Int])] = [:]
+                var locationDict: [String: (name: String, address: String, coordinates: CLLocationCoordinate2D, counts: [String: Int], availableCounts: [String: Int])] = [:]
                 
                 for document in documents {
                     let data = document.data()
@@ -458,8 +441,7 @@ class LockerMapViewModel: ObservableObject {
                           let latitude = coordinates["latitude"] as? Double,
                           let longitude = coordinates["longitude"] as? Double,
                           let size = data["size"] as? String,
-                          let available = data["available"] as? Bool,
-                          available == true else {
+                          let available = data["available"] as? Bool else {
                         print("⚠️ Skipping invalid locker document: \(document.documentID)")
                         continue
                     }
@@ -469,14 +451,18 @@ class LockerMapViewModel: ObservableObject {
                     if var locationInfo = locationDict[locationId] {
                         // Update counts for existing location
                         locationInfo.counts[size, default: 0] += 1
+                        if available {
+                            locationInfo.availableCounts[size, default: 0] += 1
+                        }
                         locationDict[locationId] = locationInfo
                     } else {
                         // Create new location entry
                         locationDict[locationId] = (
-                            name: locationName, 
+                            name: locationName,
                             address: locationAddress,
                             coordinates: coordinate,
-                            counts: [size: 1]
+                            counts: [size: 1],
+                            availableCounts: available ? [size: 1] : [:]
                         )
                     }
                 }
@@ -490,7 +476,8 @@ class LockerMapViewModel: ObservableObject {
                         address: info.address
                     )
                     
-                    location.availableLockers = info.counts
+                    // Set available lockers to the actual available count
+                    location.availableLockers = info.availableCounts
                     location.totalLockers = info.counts.values.reduce(0, +)
                     return location
                 }
@@ -498,14 +485,19 @@ class LockerMapViewModel: ObservableObject {
                 // Sort locations by name
                 self.locations.sort { $0.name < $1.name }
                 
-                // If we have locations, center the map on the first one
+                // Center map on first location
                 if let firstLocation = self.locations.first {
-                    DispatchQueue.main.async {
-                        self.region = MKCoordinateRegion(
-                            center: firstLocation.coordinate,
-                            span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-                        )
-                    }
+                    self.region = MKCoordinateRegion(
+                        center: firstLocation.coordinate,
+                        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                    )
+                }
+                
+                print("📍 Processed locations:")
+                for location in self.locations {
+                    print("  \(location.name):")
+                    print("    Total lockers: \(location.totalLockers)")
+                    print("    Available: \(location.availableLockers)")
                 }
             }
     }

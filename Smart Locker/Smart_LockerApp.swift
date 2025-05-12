@@ -13,6 +13,13 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         FirebaseApp.configure()
+        // Initialize lockers after Firebase is configured
+        DispatchQueue.main.async {
+            print("🔥 Firebase configured, initializing lockers...")
+            LockerInitializer.clearExistingLockers {
+                LockerInitializer.initializeLockers()
+            }
+        }
         return true
     }
 }

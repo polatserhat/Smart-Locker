@@ -7,6 +7,7 @@ import FirebaseFirestore
 struct PaymentConfirmationView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var authViewModel: AuthViewModel
+    @EnvironmentObject private var reservationViewModel: ReservationViewModel
     @State private var isCreatingRental = false
     @State private var showSuccess = false
     @State private var error: String?
@@ -216,6 +217,8 @@ struct PaymentConfirmationView: View {
                     return
                 }
                 
+                print("Found available locker: \(locker.documentID)")
+                
                 // 2. Create rental and update locker status
                 let batch = db.batch()
                 let rentalRef = db.collection("rentals").document()
@@ -223,9 +226,12 @@ struct PaymentConfirmationView: View {
                 
                 // Rental data
                 let rentalData: [String: Any] = [
+                    "id": rentalRef.documentID,
                     "userId": user.id,
                     "lockerId": locker.documentID,
+                    "locationId": location.id.uuidString,
                     "locationName": location.name,
+                    "locationAddress": location.address,
                     "size": rental.size.rawValue,
                     "startDate": Timestamp(date: startDate),
                     "endDate": Timestamp(date: startDate.addingTimeInterval(12 * 3600)), // 12 hours max
@@ -234,7 +240,10 @@ struct PaymentConfirmationView: View {
                     "updatedAt": Timestamp(date: startDate)
                 ]
                 
-                // Update locker
+                // Set the rental data
+                batch.setData(rentalData, forDocument: rentalRef)
+                
+                // Update locker status and availability
                 batch.updateData([
                     "available": false,
                     "status": "occupied",
@@ -242,26 +251,33 @@ struct PaymentConfirmationView: View {
                     "updatedAt": Timestamp(date: startDate)
                 ], forDocument: locker.reference)
                 
-                // Create rental
-                batch.setData(rentalData, forDocument: rentalRef)
-                
                 // Update statistics
                 let statsRef = db.collection("statistics").document("system_stats")
                 batch.updateData([
                     "locker_stats.available": FieldValue.increment(Int64(-1)),
                     "locker_stats.occupied": FieldValue.increment(Int64(1)),
-                    "rental_stats.active_rentals": FieldValue.increment(Int64(1))
+                    "rental_stats.active_rentals": FieldValue.increment(Int64(1)),
+                    "last_updated": Timestamp(date: startDate)
                 ], forDocument: statsRef)
                 
-                // Commit all changes
+                // Commit the batch
                 batch.commit { error in
-                    self.isCreatingRental = false
-                    
                     if let error = error {
-                        self.error = "Failed to create rental: \(error.localizedDescription)"
+                        print("Error creating rental: \(error.localizedDescription)")
+                        self.error = "Error creating rental: \(error.localizedDescription)"
                         self.showError = true
+                        self.isCreatingRental = false
                     } else {
+                        print("Successfully created rental with ID: \(rentalRef.documentID)")
+                        self.isCreatingRental = false
                         self.showSuccess = true
+                        
+                        // Update the view model and refresh the map
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                            self.reservationViewModel.fetchRentals(for: user.id)
+                            NotificationCenter.default.post(name: NSNotification.Name("RefreshLockerMap"), object: nil)
+                            self.dismiss()
+                        }
                     }
                 }
             }
@@ -270,7 +286,7 @@ struct PaymentConfirmationView: View {
 
 #Preview {
     let rental = LockerRental(
-        id: "123",
+        id: "preview_rental_123",
         shopName: "Smart Locker Shop - A-101",
         size: .medium,
         rentalType: .instant,
