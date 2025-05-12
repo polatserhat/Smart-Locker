@@ -1,0 +1,62 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    // Locker rules
+    match /lockers/{lockerId} {
+      allow read: if isAuthenticated();
+      allow update: if isAuthenticated();
+      // Only allow creation and deletion through admin panel
+      allow create, delete: if false;
+    }
+    
+    // Rental rules
+    match /rentals/{rentalId} {
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.userId) || 
+        request.auth.token.admin == true
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        isOwner(resource.data.userId) || 
+        request.auth.token.admin == true
+      );
+      allow delete: if false;
+    }
+    
+    // Statistics rules
+    match /statistics/{statId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    
+    // User rules
+    match /users/{userId} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // Reservation rules
+    match /reservations/{reservationId} {
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.userId) || 
+        request.auth.token.admin == true
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        isOwner(resource.data.userId) || 
+        request.auth.token.admin == true
+      );
+      allow delete: if false;
+    }
+  }
+} 

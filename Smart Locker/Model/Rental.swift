@@ -1,36 +1,37 @@
 import Foundation
 import FirebaseFirestore
 
-struct Rental: Identifiable, Codable {
+struct Rental: Identifiable {
     let id: String
     let userId: String
-    let locationId: String
+    let lockerId: String
     let locationName: String
-    let locationAddress: String
-    let coordinates: GeoPoint
     let size: String
-    let dimensions: String
-    let startDate: Timestamp
-    let endDate: Timestamp
-    let totalPrice: Double
+    let startDate: Date
+    let endDate: Date
     let status: String
-    let createdAt: Timestamp
-    var updatedAt: Timestamp?
     
-    enum CodingKeys: String, CodingKey {
-        case id
-        case userId
-        case locationId
-        case locationName
-        case locationAddress
-        case coordinates
-        case size
-        case dimensions
-        case startDate
-        case endDate
-        case totalPrice
-        case status
-        case createdAt
-        case updatedAt
+    init(snapshot: DocumentSnapshot) {
+        let data = snapshot.data() ?? [:]
+        self.id = snapshot.documentID
+        self.userId = data["userId"] as? String ?? ""
+        self.lockerId = data["lockerId"] as? String ?? ""
+        self.locationName = data["locationName"] as? String ?? ""
+        self.size = data["size"] as? String ?? ""
+        self.startDate = (data["startDate"] as? Timestamp)?.dateValue() ?? Date()
+        self.endDate = (data["endDate"] as? Timestamp)?.dateValue() ?? Date()
+        self.status = data["status"] as? String ?? ""
+    }
+    
+    // Direct initializer for previews and testing
+    init(id: String, userId: String, lockerId: String, locationName: String, size: String, startDate: Date, endDate: Date, status: String) {
+        self.id = id
+        self.userId = userId
+        self.lockerId = lockerId
+        self.locationName = locationName
+        self.size = size
+        self.startDate = startDate
+        self.endDate = endDate
+        self.status = status
     }
 } 

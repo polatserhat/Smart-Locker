@@ -24,6 +24,18 @@ struct SmartLockerApp: App {
     @StateObject private var reservationViewModel = ReservationViewModel() // ✅ Singleton for Reservations
     @AppStorage("isDarkMode") private var isDarkMode = false
 
+    init() {
+        print("📱 App starting, initializing locker system...")
+        
+        // Wait for Firebase to be fully configured
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            print("🔥 Firebase should be configured now, initializing lockers...")
+            
+            // Force reinitialize lockers
+            LockerInitializer.initializeLockers()
+        }
+    }
+    
     var body: some Scene {
         WindowGroup {
             MainView()

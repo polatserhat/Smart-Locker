@@ -79,17 +79,17 @@ struct ActiveRentalCard: View {
     
     // Format dates for display
     private var formattedStartDate: String {
-        rental.startDate.dateValue().formatted(date: .abbreviated, time: .shortened)
+        rental.startDate.formatted(date: .abbreviated, time: .shortened)
     }
     
     private var formattedEndDate: String {
-        rental.endDate.dateValue().formatted(date: .abbreviated, time: .shortened)
+        rental.endDate.formatted(date: .abbreviated, time: .shortened)
     }
     
     // Time remaining until expiration
     private var timeRemaining: String {
         let now = Date()
-        let end = rental.endDate.dateValue()
+        let end = rental.endDate
         
         if now > end {
             return "Expired"
@@ -136,11 +136,11 @@ struct ActiveRentalCard: View {
             
             // Basic details
             VStack(spacing: 12) {
-                // Address
-                ActiveRentalDetailRow(icon: "location.fill", title: "Address", value: rental.locationAddress)
+                // Locker ID
+                ActiveRentalDetailRow(icon: "location.fill", title: "Locker ID", value: rental.lockerId)
                 
                 // Size
-                ActiveRentalDetailRow(icon: "shippingbox.fill", title: "Size", value: "\(rental.size) (\(rental.dimensions))")
+                ActiveRentalDetailRow(icon: "shippingbox.fill", title: "Size", value: rental.size)
                 
                 // Date range
                 ActiveRentalDetailRow(icon: "calendar", title: "Period", value: "\(formattedStartDate) - \(formattedEndDate)")
@@ -211,7 +211,7 @@ struct ActiveRentalDetailRow: View {
     }
 }
 
-// Preview provider
+// MARK: - Preview
 struct ActiveRentalsView_Previews: PreviewProvider {
     static var previews: some View {
         let viewModel = ReservationViewModel()
@@ -220,18 +220,12 @@ struct ActiveRentalsView_Previews: PreviewProvider {
         let sampleRental = Rental(
             id: "sample-1",
             userId: "user-1",
-            locationId: "loc-1",
+            lockerId: "locker_001",
             locationName: "Smart Locker Shop - A-101",
-            locationAddress: "123 Market St, San Francisco, CA 94105",
-            coordinates: GeoPoint(latitude: 37.7749, longitude: -122.4194),
             size: "Small",
-            dimensions: "30 x 30 x 45 cm",
-            startDate: Timestamp(date: Date()),
-            endDate: Timestamp(date: Date().addingTimeInterval(24 * 3600)), // 1 day later
-            totalPrice: 24.99,
-            status: "active",
-            createdAt: Timestamp(date: Date().addingTimeInterval(-3600)),
-            updatedAt: nil
+            startDate: Date(),
+            endDate: Date().addingTimeInterval(24 * 3600), // 1 day later
+            status: "active"
         )
         
         viewModel.currentRentals = [sampleRental]

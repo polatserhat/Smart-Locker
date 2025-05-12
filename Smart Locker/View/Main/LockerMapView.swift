@@ -1,11 +1,21 @@
 import SwiftUI
 import MapKit
+import FirebaseFirestore
 
 struct LockerLocation: Identifiable {
-    let id = UUID()
+    let id: UUID
     let name: String
     let coordinate: CLLocationCoordinate2D
     let address: String
+    var availableLockers: [String: Int] = [:] // Count by size
+    var totalLockers: Int = 0
+    
+    init(id: UUID = UUID(), name: String, coordinate: CLLocationCoordinate2D, address: String) {
+        self.id = id
+        self.name = name
+        self.coordinate = coordinate
+        self.address = address
+    }
     
     // Function to open directions in Apple Maps
     func openInMaps() {
@@ -39,10 +49,7 @@ struct LockerLocation: Identifiable {
 
 struct LockerMapView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
-        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-    )
+    @StateObject private var viewModel = LockerMapViewModel()
     
     @State private var selectedLocation: LockerLocation?
     @State private var showingLockerDetails = false
@@ -55,13 +62,10 @@ struct LockerMapView: View {
         reservationDates != nil
     }
     
-    // Use sample locations
-    let locations = LockerLocation.sampleLocations
-    
     var body: some View {
         ZStack {
             // Map with annotations
-            Map(coordinateRegion: $region, annotationItems: locations) { location in
+            Map(coordinateRegion: $viewModel.region, annotationItems: viewModel.locations) { location in
                 MapAnnotation(coordinate: location.coordinate) {
                     VStack(spacing: 0) {
                         Button(action: {
@@ -93,9 +97,10 @@ struct LockerMapView: View {
                         
                         // Label shown when tapped
                         if selectedLocation?.id == location.id {
-                            Text(location.name)
+                            Text("\(location.name)\n\(location.totalLockers) lockers")
                                 .font(.caption)
                                 .fontWeight(.medium)
+                                .multilineTextAlignment(.center)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 5)
                                 .background(
@@ -175,7 +180,7 @@ struct LockerMapView: View {
                 
                 // Bottom status bar showing number of locations
                 HStack {
-                    Text("\(locations.count) locations near you")
+                    Text("\(viewModel.locations.count) locations near you")
                         .font(.footnote)
                         .fontWeight(.medium)
                         .foregroundColor(.white)
@@ -254,22 +259,25 @@ struct LockerMapView: View {
                             // Small Lockers
                             AvailabilityCard(
                                 size: "Small",
-                                count: 27,
-                                dimensions: "30 x 30 x 45 cm"
+                                locationId: selectedLocation?.id.uuidString ?? "",
+                                dimensions: "30 x 30 x 45 cm",
+                                availableCount: selectedLocation?.availableLockers["Small"] ?? 0
                             )
                             
                             // Medium Lockers
                             AvailabilityCard(
                                 size: "Medium",
-                                count: 24,
-                                dimensions: "45 x 45 x 60 cm"
+                                locationId: selectedLocation?.id.uuidString ?? "",
+                                dimensions: "45 x 45 x 60 cm",
+                                availableCount: selectedLocation?.availableLockers["Medium"] ?? 0
                             )
                             
                             // Large Lockers
                             AvailabilityCard(
                                 size: "Large",
-                                count: 29,
-                                dimensions: "60 x 60 x 90 cm"
+                                locationId: selectedLocation?.id.uuidString ?? "",
+                                dimensions: "60 x 60 x 90 cm",
+                                availableCount: selectedLocation?.availableLockers["Large"] ?? 0
                             )
                         }
                     }
@@ -390,14 +398,125 @@ struct LockerMapView: View {
         } message: {
             Text("Choose your preferred navigation app")
         }
+        .onAppear {
+            viewModel.fetchLockerLocations()
+        }
+    }
+}
+
+class LockerMapViewModel: ObservableObject {
+    @Published var locations: [LockerLocation] = []
+    @Published var region = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
+        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+    )
+    private let db = Firestore.firestore()
+    
+    func fetchLockerLocations() {
+        print("🔍 Fetching locker locations...")
+        
+        #if DEBUG
+        // Use sample data in debug mode
+        self.locations = LockerLocation.sampleLocations
+        if let firstLocation = self.locations.first {
+            self.region = MKCoordinateRegion(
+                center: firstLocation.coordinate,
+                span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+            )
+        }
+        return
+        #endif
+        
+        // First, get all unique location IDs
+        db.collection("lockers")
+            .whereField("available", isEqualTo: true)  // Only fetch available lockers
+            .getDocuments { [weak self] snapshot, error in
+                guard let self = self, let documents = snapshot?.documents else {
+                    print("❌ Error fetching lockers: \(error?.localizedDescription ?? "unknown error")")
+                    // Fallback to sample data if Firebase fetch fails
+                    self?.locations = LockerLocation.sampleLocations
+                    if let firstLocation = self?.locations.first {
+                        self?.region = MKCoordinateRegion(
+                            center: firstLocation.coordinate,
+                            span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                        )
+                    }
+                    return
+                }
+                
+                print("📦 Found \(documents.count) available lockers")
+                
+                // Group lockers by location
+                var locationDict: [String: (name: String, address: String, coordinates: CLLocationCoordinate2D, counts: [String: Int])] = [:]
+                
+                for document in documents {
+                    let data = document.data()
+                    guard let locationId = data["locationId"] as? String,
+                          let locationName = data["locationName"] as? String,
+                          let locationAddress = data["locationAddress"] as? String,
+                          let coordinates = data["coordinates"] as? [String: Any],
+                          let latitude = coordinates["latitude"] as? Double,
+                          let longitude = coordinates["longitude"] as? Double,
+                          let size = data["size"] as? String,
+                          let available = data["available"] as? Bool,
+                          available == true else {
+                        print("⚠️ Skipping invalid locker document: \(document.documentID)")
+                        continue
+                    }
+                    
+                    let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+                    
+                    if var locationInfo = locationDict[locationId] {
+                        // Update counts for existing location
+                        locationInfo.counts[size, default: 0] += 1
+                        locationDict[locationId] = locationInfo
+                    } else {
+                        // Create new location entry
+                        locationDict[locationId] = (
+                            name: locationName, 
+                            address: locationAddress,
+                            coordinates: coordinate,
+                            counts: [size: 1]
+                        )
+                    }
+                }
+                
+                // Convert dictionary to location array
+                self.locations = locationDict.map { (locationId, info) in
+                    var location = LockerLocation(
+                        id: UUID(uuidString: locationId) ?? UUID(),
+                        name: info.name,
+                        coordinate: info.coordinates,
+                        address: info.address
+                    )
+                    
+                    location.availableLockers = info.counts
+                    location.totalLockers = info.counts.values.reduce(0, +)
+                    return location
+                }
+                
+                // Sort locations by name
+                self.locations.sort { $0.name < $1.name }
+                
+                // If we have locations, center the map on the first one
+                if let firstLocation = self.locations.first {
+                    DispatchQueue.main.async {
+                        self.region = MKCoordinateRegion(
+                            center: firstLocation.coordinate,
+                            span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                        )
+                    }
+                }
+            }
     }
 }
 
 // Availability card component
 struct AvailabilityCard: View {
     let size: String
-    let count: Int
+    let locationId: String
     let dimensions: String
+    let availableCount: Int
     
     var body: some View {
         VStack(spacing: 6) {
@@ -405,7 +524,7 @@ struct AvailabilityCard: View {
                 .font(.subheadline)
                 .fontWeight(.medium)
             
-            Text("\(count)")
+            Text("\(availableCount)")
                 .font(.system(size: 22, weight: .bold))
                 .foregroundColor(AppColors.primaryBlack)
             
@@ -415,14 +534,17 @@ struct AvailabilityCard: View {
                 .multilineTextAlignment(.center)
                 .frame(height: 26)
             
-            Text("Available")
+            // Show Available/Full tag based on availability 
+            Text(availableCount > 0 ? "Available" : "Full")
                 .font(.system(size: 10))
                 .fontWeight(.semibold)
                 .foregroundColor(.white)
-                .padding(.horizontal, 8)
+                .padding(.horizontal, 12)
                 .padding(.vertical, 4)
-                .background(Color.green)
-                .cornerRadius(10)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(availableCount > 0 ? Color.green : Color.red)
+                )
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 8)
@@ -447,29 +569,37 @@ struct AvailabilityCard: View {
 extension LockerLocation {
     static let sampleLocations = [
         LockerLocation(
-            name: "Smart Locker Shop - A-101",
+            name: "Smart Locker Shop - A-001",
             coordinate: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
             address: "123 Market St, San Francisco, CA 94105"
-        ),
+        ).with(availableLockers: ["Small": 3, "Medium": 2, "Large": 1]),
         LockerLocation(
-            name: "Smart Locker Shop - A-102",
+            name: "Smart Locker Shop - B-001",
             coordinate: CLLocationCoordinate2D(latitude: 37.7847, longitude: -122.4089),
             address: "456 Mission St, San Francisco, CA 94105"
-        ),
+        ).with(availableLockers: ["Small": 2, "Medium": 3, "Large": 2]),
         LockerLocation(
-            name: "Smart Locker Shop - A-103",
+            name: "Smart Locker Shop - C-001",
             coordinate: CLLocationCoordinate2D(latitude: 37.7697, longitude: -122.4269),
             address: "789 Howard St, San Francisco, CA 94103"
-        ),
+        ).with(availableLockers: ["Small": 4, "Medium": 1, "Large": 0]),
         LockerLocation(
-            name: "Smart Locker Shop - B-101",
+            name: "Smart Locker Shop - D-001",
             coordinate: CLLocationCoordinate2D(latitude: 37.7879, longitude: -122.4074),
             address: "101 California St, San Francisco, CA 94111"
-        ),
+        ).with(availableLockers: ["Small": 1, "Medium": 4, "Large": 3]),
         LockerLocation(
-            name: "Smart Locker Shop - B-102",
+            name: "Smart Locker Shop - E-001",
             coordinate: CLLocationCoordinate2D(latitude: 37.7785, longitude: -122.4314),
             address: "333 Post St, San Francisco, CA 94108"
-        )
+        ).with(availableLockers: ["Small": 5, "Medium": 2, "Large": 1])
     ]
+    
+    // Helper function to set available lockers
+    func with(availableLockers: [String: Int]) -> LockerLocation {
+        var copy = self
+        copy.availableLockers = availableLockers
+        copy.totalLockers = availableLockers.values.reduce(0, +)
+        return copy
+    }
 }

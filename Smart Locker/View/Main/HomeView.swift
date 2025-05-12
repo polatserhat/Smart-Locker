@@ -1,4 +1,6 @@
 import SwiftUI
+import FirebaseFirestore
+
 
 struct CategoryButton: View {
     let icon: String
@@ -114,26 +116,151 @@ struct HomeView: View {
                             .font(.headline)
                             .foregroundColor(.gray)
                         
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("No active rental")
-                                    .font(.title3)
-                                    .fontWeight(.medium)
-                                Text("Your locker rentals will appear here")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
+                        if let activeRental = reservationViewModel.currentRentals.first {
+                            VStack(spacing: 16) {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(activeRental.locationName)
+                                            .font(.title3)
+                                            .fontWeight(.medium)
+                                        Text("\(activeRental.size) Locker")
+                                            .font(.subheadline)
+                                            .foregroundColor(.gray)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Text(activeRental.startDate, style: .time)
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(AppColors.primaryYellow)
+                                }
+                                
+                                if activeRental.status == "active" {
+                                    Button(action: {
+                                        // Calculate final price and end rental
+                                        let endTime = Date()
+                                        let startTime = activeRental.startDate
+                                        let hours = Calendar.current.dateComponents([.hour, .minute], from: startTime, to: endTime)
+                                        let totalHours = Double(hours.hour ?? 0) + (Double(hours.minute ?? 0) / 60.0)
+                                        
+                                        // Get pricing from the locker document
+                                        let db = Firestore.firestore()
+                                        db.collection("lockers")
+                                            .document(activeRental.lockerId)
+                                            .getDocument { snapshot, error in
+                                                if let error = error {
+                                                    print("Error fetching locker: \(error.localizedDescription)")
+                                                    return
+                                                }
+                                                
+                                                guard let data = snapshot?.data(),
+                                                      let pricing = data["pricing"] as? [String: Any],
+                                                      let standardPricing = pricing["standard"] as? [String: Any],
+                                                      let hourlyRate = standardPricing["hourly"] as? Double else {
+                                                    print("Error getting pricing data")
+                                                    return
+                                                }
+                                                
+                                                let finalPrice = max(hourlyRate * totalHours, hourlyRate) // Minimum of 1 hour
+                                                
+                                                // Show confirmation alert
+                                                let formatter = NumberFormatter()
+                                                formatter.numberStyle = .currency
+                                                formatter.maximumFractionDigits = 2
+                                                
+                                                let priceString = formatter.string(from: NSNumber(value: finalPrice)) ?? "$\(String(format: "%.2f", finalPrice))"
+                                                let hoursString = String(format: "%.1f", totalHours)
+                                                
+                                                // Update rental status and price
+                                                let batch = db.batch()
+                                                
+                                                // Update rental document
+                                                let rentalRef = db.collection("rentals").document(activeRental.id)
+                                                batch.updateData([
+                                                    "status": "completed",
+                                                    "endDate": Timestamp(date: endTime),
+                                                    "totalPrice": finalPrice,
+                                                    "updatedAt": Timestamp(date: endTime)
+                                                ], forDocument: rentalRef)
+                                                
+                                                // Update locker status
+                                                let lockerRef = db.collection("lockers").document(activeRental.lockerId)
+                                                batch.updateData([
+                                                    "status": "available",
+                                                    "available": true,
+                                                    "currentRentalId": nil,
+                                                    "updatedAt": Timestamp(date: endTime)
+                                                ], forDocument: lockerRef)
+                                                
+                                                // Update statistics
+                                                let statsRef = db.collection("statistics").document("system_stats")
+                                                batch.updateData([
+                                                    "locker_stats.available": FieldValue.increment(Int64(1)),
+                                                    "locker_stats.occupied": FieldValue.increment(Int64(-1)),
+                                                    "rental_stats.active_rentals": FieldValue.increment(Int64(-1)),
+                                                    "revenue_stats.total_revenue": FieldValue.increment(finalPrice),
+                                                    "revenue_stats.today_revenue": FieldValue.increment(finalPrice),
+                                                    "revenue_stats.by_size.\(activeRental.size)": FieldValue.increment(finalPrice),
+                                                    "revenue_stats.by_plan.standard": FieldValue.increment(finalPrice),
+                                                    "usage_stats.total_rentals": FieldValue.increment(Int64(1)),
+                                                    "usage_stats.rental_hours": FieldValue.increment(Int64(ceil(totalHours))),
+                                                    "usage_stats.standard_rentals": FieldValue.increment(Int64(1)),
+                                                    "usage_stats.total_revenue": FieldValue.increment(finalPrice)
+                                                ], forDocument: statsRef)
+                                                
+                                                // Commit the batch
+                                                batch.commit { error in
+                                                    if let error = error {
+                                                        print("Error ending rental: \(error.localizedDescription)")
+                                                    } else {
+                                                        print("Rental ended successfully")
+                                                        
+                                                        // Update statistics
+                                                        db.collection("statistics").document("system_stats").updateData([
+                                                            "locker_stats.available": FieldValue.increment(Int64(1)),
+                                                            "locker_stats.occupied": FieldValue.increment(Int64(-1)),
+                                                            "rental_stats.active_rentals": FieldValue.increment(Int64(-1))
+                                                        ])
+                                                    }
+                                                }
+                                            }
+                                    }) {
+                                        Text("End Rental")
+                                            .font(.headline)
+                                            .foregroundColor(.white)
+                                            .frame(maxWidth: .infinity)
+                                            .padding()
+                                            .background(Color.red)
+                                            .cornerRadius(10)
+                                    }
+                                }
                             }
-                            
-                            Spacer()
-                            
-                            Image(systemName: "arrow.right.circle.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(AppColors.primaryYellow)
+                            .padding()
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+                        } else {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("No active rental")
+                                        .font(.title3)
+                                        .fontWeight(.medium)
+                                    Text("Your locker rentals will appear here")
+                                        .font(.subheadline)
+                                        .foregroundColor(.gray)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "arrow.right.circle.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(AppColors.primaryYellow)
+                            }
+                            .padding()
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
                         }
-                        .padding()
-                        .background(Color.white)
-                        .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
                     }
                     
                     // Past Rentals Section

@@ -77,101 +77,38 @@ struct RentalHistoryView: View {
 struct RentalCard: View {
     let rental: Rental
     
-    // Format dates for display
-    private var formattedStartDate: String {
-        rental.startDate.dateValue().formatted(date: .abbreviated, time: .shortened)
-    }
-    
-    private var formattedEndDate: String {
-        rental.endDate.dateValue().formatted(date: .abbreviated, time: .shortened)
-    }
-    
-    // Duration in hours, rounded to 1 decimal place
-    private var duration: String {
-        let seconds = rental.endDate.dateValue().timeIntervalSince(rental.startDate.dateValue())
-        let hours = seconds / 3600
-        return String(format: "%.1f hrs", hours)
-    }
-    
-    // Format price with currency
-    private var formattedPrice: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.maximumFractionDigits = 2
-        
-        if let priceString = formatter.string(from: NSNumber(value: rental.totalPrice)) {
-            return priceString
-        }
-        
-        return "$\(rental.totalPrice)"
-    }
-    
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Header with location name and status
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: "mappin.circle.fill")
-                    .font(.title3)
-                    .foregroundColor(AppColors.primaryYellow)
-                
                 Text(rental.locationName)
                     .font(.headline)
                 
                 Spacer()
                 
-                Text(rental.status.capitalized)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(statusBackgroundColor)
-                    .foregroundColor(statusForegroundColor)
-                    .cornerRadius(8)
+                Text(rental.status)
+                    .font(.subheadline)
+                    .foregroundColor(.blue)
             }
             
-            Divider()
-            
-            // Details
-            VStack(spacing: 12) {
-                // Address
-                RentalDetailRow(icon: "location.fill", title: "Address", value: rental.locationAddress)
-                
-                // Size
-                RentalDetailRow(icon: "shippingbox.fill", title: "Size", value: "\(rental.size) (\(rental.dimensions))")
-                
-                // Date range
-                RentalDetailRow(icon: "calendar", title: "Duration", value: "\(formattedStartDate) - \(formattedEndDate) (\(duration))")
-                
-                // Price
-                RentalDetailRow(icon: "creditcard.fill", title: "Total Paid", value: formattedPrice)
+            HStack {
+                Text("Size: \(rental.size)")
+                Spacer()
+                Text("Locker: \(rental.lockerId)")
             }
+            .font(.subheadline)
+            .foregroundColor(.gray)
+            
+            HStack {
+                Text(rental.startDate, style: .date)
+                Text("-")
+                Text(rental.endDate, style: .date)
+            }
+            .font(.caption)
+            .foregroundColor(.gray)
         }
         .padding()
         .background(Color(UIColor.systemGray6))
-        .cornerRadius(16)
-    }
-    
-    // Handle status colors
-    private var statusBackgroundColor: Color {
-        switch rental.status.lowercased() {
-        case "completed":
-            return Color.green.opacity(0.2)
-        case "cancelled":
-            return Color.red.opacity(0.2)
-        default:
-            return Color.orange.opacity(0.2)
-        }
-    }
-    
-    private var statusForegroundColor: Color {
-        switch rental.status.lowercased() {
-        case "completed":
-            return Color.green
-        case "cancelled":
-            return Color.red
-        default:
-            return Color.orange
-        }
+        .cornerRadius(12)
     }
 }
 
@@ -205,22 +142,16 @@ struct RentalHistoryView_Previews: PreviewProvider {
     static var previews: some View {
         let viewModel = ReservationViewModel()
         
-        // Add sample data for preview
+        // Create a simple rental for preview
         let sampleRental = Rental(
             id: "sample-1",
             userId: "user-1",
-            locationId: "loc-1",
+            lockerId: "locker_001",
             locationName: "Smart Locker Shop - A-101",
-            locationAddress: "123 Market St, San Francisco, CA 94105",
-            coordinates: GeoPoint(latitude: 37.7749, longitude: -122.4194),
             size: "Small",
-            dimensions: "30 x 30 x 45 cm",
-            startDate: Timestamp(date: Date().addingTimeInterval(-86400)),
-            endDate: Timestamp(date: Date()),
-            totalPrice: 24.99,
-            status: "completed",
-            createdAt: Timestamp(date: Date().addingTimeInterval(-86400)),
-            updatedAt: nil
+            startDate: Date().addingTimeInterval(-86400),
+            endDate: Date(),
+            status: "completed"
         )
         
         viewModel.pastRentals = [sampleRental]

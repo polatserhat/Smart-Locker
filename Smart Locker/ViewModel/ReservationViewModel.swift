@@ -14,7 +14,7 @@ class ReservationViewModel: ObservableObject {
     
     init() {
         // Listen for auth changes
-        Auth.auth().addStateDidChangeListener { [weak self] _, user in
+        _ = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             if let user = user {
                 self?.fetchRentals(for: user.uid)
             } else {
@@ -50,9 +50,9 @@ class ReservationViewModel: ObservableObject {
                     return
                 }
                 
-                // Simple processing of rentals
-                let allRentals = documents.compactMap { doc -> Rental? in
-                    try? doc.data(as: Rental.self)
+                // Process rentals using the new initializer
+                let allRentals = documents.map { doc in
+                    Rental(snapshot: doc)
                 }
                 
                 // Get current date for comparison
@@ -61,18 +61,19 @@ class ReservationViewModel: ObservableObject {
                 // Separate current and past rentals
                 DispatchQueue.main.async {
                     self.currentRentals = allRentals.filter { rental in
-                        let endDate = rental.endDate.dateValue()
-                        return endDate > now && rental.status != "cancelled"
+                        // Include all active status rentals regardless of end date
+                        return rental.status == "active" || 
+                            (rental.endDate > now && rental.status != "cancelled" && rental.status != "completed")
                     }
                     
                     self.pastRentals = allRentals.filter { rental in
-                        let endDate = rental.endDate.dateValue()
-                        return endDate <= now || rental.status == "cancelled"
+                        return rental.status == "completed" || rental.status == "cancelled" ||
+                            (rental.endDate <= now && rental.status != "active")
                     }
                     
                     // Sort rentals by date (newest first)
-                    self.currentRentals.sort { $0.startDate.dateValue() > $1.startDate.dateValue() }
-                    self.pastRentals.sort { $0.startDate.dateValue() > $1.startDate.dateValue() }
+                    self.currentRentals.sort { $0.startDate > $1.startDate }
+                    self.pastRentals.sort { $0.startDate > $1.startDate }
                 }
             }
     }

@@ -1,220 +1,332 @@
 import SwiftUI
 import MapKit
+import FirebaseAuth
+import FirebaseFirestore
+
 
 struct PaymentConfirmationView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var showingDirectionsSheet = false
     @EnvironmentObject private var authViewModel: AuthViewModel
-    @Environment(\.presentationMode) private var presentationMode
+    @State private var isCreatingRental = false
+    @State private var showSuccess = false
+    @State private var error: String?
+    @State private var showError = false
     
     let rental: LockerRental
     let location: LockerLocation
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                // Success Animation
-                VStack(spacing: 16) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 80))
-                        .foregroundColor(.green)
-                        .scaleEffect(1)
-                        .onAppear {
-                            withAnimation(.spring(dampingFraction: 0.6)) {
-                                // Add scale animation
-                            }
-                        }
-                    
-                    Text("Your Rental is Confirmed!")
-                        .font(.title2)
-                        .fontWeight(.bold)
+        VStack(spacing: 20) {
+            // Header
+            HStack {
+                Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundColor(AppColors.primaryBlack)
                 }
-                .padding(.top, 32)
                 
-                // Reservation Details
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Reservation Details")
-                        .font(.headline)
-                    
-                    VStack(alignment: .leading, spacing: 12) {
-                        DetailRow(icon: "mappin.circle.fill", title: "Locker Shop", value: rental.shopName)
-                        DetailRow(icon: "cube.fill", title: "Selected Size", value: "\(rental.size.rawValue) (\(rental.size.dimensions))")
-                        
-                        if let plan = rental.plan {
-                            DetailRow(icon: "star.fill", title: "Selected Plan", value: "\(plan.tier.rawValue) - \(plan.duration.rawValue)")
-                            DetailRow(icon: "clock.fill", title: "Duration", value: getDurationString(for: plan))
-                            DetailRow(icon: "dollarsign.circle.fill", title: "Total Price", value: "$\(String(format: "%.2f", rental.totalPrice ?? plan.price))")
-                        } else {
-                            DetailRow(icon: "clock.fill", title: "Duration", value: "24 Hours")
-                        }
-                    }
-                }
-                .padding()
-                .background(Color.white)
-                .cornerRadius(12)
-                .shadow(color: Color.black.opacity(0.05), radius: 10)
+                Spacer()
                 
-                // QR Code Section
-                VStack(spacing: 12) {
-                    Text("Access Code")
+                Text("Start Rental")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                
+                Spacer()
+                
+                // Balance spacing
+                Color.clear
+                    .frame(width: 24, height: 24)
+            }
+            .padding(.top, 20)
+            
+            // Rental details card
+            VStack(spacing: 16) {
+                Image(systemName: "clock.fill")
+                    .font(.system(size: 50))
+                    .foregroundColor(AppColors.primaryYellow)
+                    .padding(.bottom, 10)
+                
+                Text("Hourly Rental Ready")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                Text("Your locker is ready to use. Your rental will begin once you click 'Start Rental' below.")
+                    .multilineTextAlignment(.center)
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                    .padding(.horizontal)
+                
+                Divider()
+                    .padding(.vertical, 10)
+                
+                // Location info
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Location")
                         .font(.headline)
+                        .foregroundColor(.gray)
                     
-                    Image(systemName: "qrcode")
-                        .font(.system(size: 120))
-                        .padding()
-                        .background(Color.white)
-                        .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.05), radius: 10)
+                    Text(rental.shopName)
+                        .font(.title3)
+                        .fontWeight(.semibold)
                     
-                    Text("Scan this code at the locker")
+                    Text(location.address)
                         .font(.subheadline)
                         .foregroundColor(.gray)
+                        .padding(.bottom, 8)
                 }
-                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                // Locker info
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Locker Size")
+                            .font(.headline)
+                            .foregroundColor(.gray)
+                        
+                        Text(rental.size.rawValue)
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                    }
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("Rate")
+                            .font(.headline)
+                            .foregroundColor(.gray)
+                        
+                        Text("$\(String(format: "%.2f", rental.size.basePrice))/hour")
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundColor(AppColors.primaryYellow)
+                    }
+                }
+                .padding(.bottom, 8)
+                
+                // Start time
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Start Time")
+                        .font(.headline)
+                        .foregroundColor(.gray)
+                    
+                    HStack {
+                        Image(systemName: "clock")
+                            .foregroundColor(AppColors.primaryYellow)
+                        
+                        Text(Date(), style: .time)
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, 24)
-        }
-        
-        // Fixed Bottom Action Buttons
-        VStack(spacing: 16) {
-            // Get Directions Button
+            .padding()
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.05), radius: 10)
+            
+            Spacer()
+            
+            // Important Note
+            VStack(spacing: 8) {
+                Text("Important Note")
+                    .font(.headline)
+                    .foregroundColor(AppColors.primaryBlack)
+                
+                Text("You will be charged based on the actual usage time when you end the rental. The hourly rate will be applied to calculate the final amount.")
+                    .multilineTextAlignment(.center)
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+            }
+            .padding()
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.05), radius: 10)
+            
+            // Start Rental Button
             Button(action: {
-                showingDirectionsSheet = true
+                startRental()
             }) {
                 HStack {
-                    Image(systemName: "location.fill")
-                    Text("Get Directions")
+                    Text("START RENTAL")
+                        .fontWeight(.bold)
+                    
+                    if isCreatingRental {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .padding(.leading, 5)
+                    } else {
+                        Image(systemName: "arrow.right.circle.fill")
+                    }
                 }
-                .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
                 .background(AppColors.primaryYellow)
-                .cornerRadius(16)
-                .shadow(color: Color.black.opacity(0.2), radius: 5)
+                .foregroundColor(AppColors.primaryBlack)
+                .cornerRadius(14)
+                .shadow(color: AppColors.primaryYellow.opacity(0.3), radius: 10, x: 0, y: 5)
             }
-            
-            // Action Buttons
-            HStack(spacing: 16) {
-                // View Reservations Button
-                Button(action: {
-                    // Navigate to reservations
-                }) {
-                    HStack {
-                        Image(systemName: "list.bullet")
-                        Text("My Reservations")
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(AppColors.primaryBlack)
-                    .cornerRadius(16)
-                    .shadow(color: Color.black.opacity(0.2), radius: 5)
-                }
-                
-                // Return Home Button
-                Button(action: {
-                    // First dismiss this view
-                    presentationMode.wrappedValue.dismiss()
-                    
-                    // Then dismiss any other presented sheets
-                    dismiss()
-                    
-                    // Finally trigger navigation to home after a short delay
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        authViewModel.navigateToHome = true
-                    }
-                }) {
-                    HStack {
-                        Image(systemName: "house.fill")
-                        Text("Home")
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(AppColors.primaryYellow)
-                    .cornerRadius(16)
-                    .shadow(color: Color.black.opacity(0.2), radius: 5)
-                }
-            }
+            .padding(.top, 20)
+            .disabled(isCreatingRental)
         }
-        .padding(.horizontal, 20)
-        .padding(.bottom, 50)
-        .background(
-            Color(UIColor.systemBackground)
-                .shadow(color: Color.black.opacity(0.05), radius: 8, y: -4)
-        )
-        .confirmationDialog(
-            "Get Directions",
-            isPresented: $showingDirectionsSheet,
-            titleVisibility: .visible
-        ) {
-            Button("Open in Apple Maps") {
-                location.openInMaps()
-            }
-            
-            Button("Open in Google Maps") {
-                location.openInGoogleMaps()
-            }
-            
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Choose your preferred navigation app")
+        .padding(.horizontal, 24)
+        .background(Color(UIColor.systemBackground))
+        .alert(isPresented: $showError) {
+            Alert(
+                title: Text("Error"),
+                message: Text(error ?? "Something went wrong. Please try again."),
+                dismissButton: .default(Text("OK"))
+            )
+        }
+        .fullScreenCover(isPresented: $showSuccess) {
+            RentalSuccessView(dismiss: {
+                dismiss()
+            })
         }
     }
     
-    private func getDurationString(for plan: Plan) -> String {
-        switch plan.duration {
-        case .hourly:
-            return "\(plan.totalHours) hour\(plan.totalHours > 1 ? "s" : "")"
-        case .daily:
-            return "\(plan.totalHours / 24) day\(plan.totalHours > 24 ? "s" : "")"
-        case .weekly:
-            return "\(plan.totalHours / 24 / 7) week\(plan.totalHours > (24 * 7) ? "s" : "")"
-        case .monthly:
-            return "\(plan.totalHours / 24 / 30) month\(plan.totalHours > (24 * 30) ? "s" : "")"
+    private func startRental() {
+        guard let user = authViewModel.currentUser else {
+            error = "You must be logged in to rent a locker."
+            showError = true
+            return
         }
+        
+        isCreatingRental = true
+        let db = Firestore.firestore()
+        
+        // 1. Find an available locker
+        db.collection("lockers")
+            .whereField("locationName", isEqualTo: location.name)
+            .whereField("size", isEqualTo: rental.size.rawValue)
+            .whereField("available", isEqualTo: true)
+            .limit(to: 1)
+            .getDocuments { snapshot, error in
+                if let error = error {
+                    self.error = "Error finding locker: \(error.localizedDescription)"
+                    self.showError = true
+                    self.isCreatingRental = false
+                    return
+                }
+                
+                guard let locker = snapshot?.documents.first else {
+                    self.error = "No available lockers found"
+                    self.showError = true
+                    self.isCreatingRental = false
+                    return
+                }
+                
+                // 2. Create rental and update locker status
+                let batch = db.batch()
+                let rentalRef = db.collection("rentals").document()
+                let startDate = Date()
+                
+                // Rental data
+                let rentalData: [String: Any] = [
+                    "userId": user.id,
+                    "lockerId": locker.documentID,
+                    "locationName": location.name,
+                    "size": rental.size.rawValue,
+                    "startDate": Timestamp(date: startDate),
+                    "endDate": Timestamp(date: startDate.addingTimeInterval(12 * 3600)), // 12 hours max
+                    "status": "active",
+                    "createdAt": Timestamp(date: startDate),
+                    "updatedAt": Timestamp(date: startDate)
+                ]
+                
+                // Update locker
+                batch.updateData([
+                    "available": false,
+                    "status": "occupied",
+                    "currentRentalId": rentalRef.documentID,
+                    "updatedAt": Timestamp(date: startDate)
+                ], forDocument: locker.reference)
+                
+                // Create rental
+                batch.setData(rentalData, forDocument: rentalRef)
+                
+                // Update statistics
+                let statsRef = db.collection("statistics").document("system_stats")
+                batch.updateData([
+                    "locker_stats.available": FieldValue.increment(Int64(-1)),
+                    "locker_stats.occupied": FieldValue.increment(Int64(1)),
+                    "rental_stats.active_rentals": FieldValue.increment(Int64(1))
+                ], forDocument: statsRef)
+                
+                // Commit all changes
+                batch.commit { error in
+                    self.isCreatingRental = false
+                    
+                    if let error = error {
+                        self.error = "Failed to create rental: \(error.localizedDescription)"
+                        self.showError = true
+                    } else {
+                        self.showSuccess = true
+                    }
+                }
+            }
     }
 }
 
-struct DetailRow: View {
-    let icon: String
-    let title: String
-    let value: String
+struct RentalSuccessView: View {
+    var dismiss: () -> Void
     
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 20))
-                .foregroundColor(.black)
-                .frame(width: 24, height: 24)
+        VStack(spacing: 20) {
+            Spacer()
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                Text(value)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 80))
+                .foregroundColor(AppColors.primaryYellow)
+                .padding(.bottom, 30)
+            
+            Text("Rental Started!")
+                .font(.title)
+                .fontWeight(.bold)
+            
+            Text("Your locker is now available for use. The clock has started, and you'll only be charged for the time you actually use.")
+                .multilineTextAlignment(.center)
+                .font(.body)
+                .foregroundColor(.gray)
+                .padding(.horizontal, 40)
+            
+            Spacer()
+            
+            Button(action: {
+                dismiss()
+            }) {
+                Text("RETURN TO HOME")
+                    .fontWeight(.bold)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(AppColors.primaryBlack)
+                    .foregroundColor(.white)
+                    .cornerRadius(14)
             }
+            .padding(.bottom, 40)
+            .padding(.horizontal, 24)
         }
+        .background(Color(UIColor.systemBackground))
     }
 }
 
 #Preview {
-    PaymentConfirmationView(
-        rental: LockerRental(
-            id: "1",
-            shopName: "Smart Locker Shop - A-103",
-            size: .medium,
-            rentalType: .instant,
-            reservationDate: nil,
-            plan: Plan(tier: .premium, duration: .daily)
-        ),
-        location: LockerLocation(
-            name: "Smart Locker Shop - A-103",
-            coordinate: CLLocationCoordinate2D(latitude: 37.7697, longitude: -122.4269),
-            address: "789 Howard St, San Francisco, CA 94103"
-        )
+    let rental = LockerRental(
+        id: "123",
+        shopName: "Smart Locker Shop - A-101",
+        size: .medium,
+        rentalType: .instant,
+        startTime: Date()
     )
-    .environmentObject(AuthViewModel())
+    
+    let location = LockerLocation(
+        name: "Smart Locker Shop - A-101",
+        coordinate: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
+        address: "123 Market St, San Francisco, CA 94105"
+    )
+    
+    return PaymentConfirmationView(rental: rental, location: location)
+        .environmentObject(AuthViewModel())
 } 

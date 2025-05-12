@@ -155,11 +155,22 @@ struct PlanSelectionView: View {
                 size: rental.size,
                 rentalType: rental.rentalType,
                 reservationDate: rental.reservationDate,
-                totalPrice: totalPrice,
+                startTime: selectedDuration == .hourly ? selectedStartTime : nil,
+                endTime: selectedDuration == .hourly ? nil : nil,
+                status: .active,
+                totalPrice: selectedDuration == .hourly ? nil : totalPrice,
                 plan: plan
             )
-            LockerConfirmationView(rental: updatedRental, location: location)
-                .environmentObject(AuthViewModel.shared ?? authViewModel)
+            
+            if selectedDuration == .hourly {
+                // For hourly rentals, go straight to the rental confirmation without payment
+                PaymentConfirmationView(rental: updatedRental, location: location)
+                    .environmentObject(AuthViewModel.shared ?? authViewModel)
+            } else {
+                // For other durations, go to payment view
+                LockerConfirmationView(rental: updatedRental, location: location)
+                    .environmentObject(AuthViewModel.shared ?? authViewModel)
+            }
         }
     }
     
