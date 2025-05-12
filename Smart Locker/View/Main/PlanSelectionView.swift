@@ -5,7 +5,7 @@ struct PlanSelectionView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var authViewModel: AuthViewModel
     @State private var selectedTier: PlanTier = .standard
-    @State private var selectedDuration: PlanDuration = .daily
+    @State private var selectedDuration: PlanDuration = .hourly
     @State private var showConfirmation = false
     @State private var showPlanRequiredHint = false
     
@@ -15,10 +15,7 @@ struct PlanSelectionView: View {
     
     // Calculate total price based on duration
     private var totalPrice: Double {
-        if selectedDuration == .hourly {
-            return selectedTier.hourlyRate
-        }
-        return selectedDuration.getPrice(for: selectedTier)
+        selectedDuration.getPrice(for: selectedTier)
     }
     
     // Helper computed properties to break down complex expressions
@@ -107,7 +104,12 @@ struct PlanSelectionView: View {
             ScrollView {
                 VStack(spacing: 24) {
                     planTierSection
-                    durationSection
+                    
+                    // Only show duration selection for reservations
+                    if rental.rentalType == .reservation {
+                        durationSection
+                    }
+                    
                     if selectedDuration == .hourly {
                         hourlyRentalInfoSection
                     } else if selectedDuration == .daily {
@@ -138,8 +140,8 @@ struct PlanSelectionView: View {
             let plan = Plan(
                 tier: selectedTier,
                 duration: selectedDuration,
-                numberOfHours: selectedDuration == .hourly ? 1 : nil,
-                price: totalPrice
+                startTime: Date(),
+                totalHours: selectedDuration == .hourly ? 1 : 24
             )
             let updatedRental = LockerRental(
                 id: rental.id,
@@ -147,14 +149,16 @@ struct PlanSelectionView: View {
                 size: rental.size,
                 rentalType: rental.rentalType,
                 reservationDate: rental.reservationDate,
-                startTime: selectedDuration == .hourly ? Date() : nil,
-                endTime: nil,
+                startTime: Date(),
+                endTime: selectedDuration == .hourly ? 
+                    Calendar.current.date(byAdding: .hour, value: 1, to: Date()) : 
+                    Calendar.current.date(byAdding: .day, value: 1, to: Date()),
                 status: .active,
-                totalPrice: selectedDuration == .hourly ? nil : totalPrice,
+                totalPrice: totalPrice,
                 plan: plan
             )
             
-            if selectedDuration == .hourly {
+            if rental.rentalType == .instant {
                 // For hourly rentals, go straight to the rental confirmation without payment
                 PaymentConfirmationView(rental: updatedRental, location: location)
                     .environmentObject(AuthViewModel.shared ?? authViewModel)
@@ -335,11 +339,9 @@ struct PlanSelectionView: View {
                     .font(.headline)
                     .foregroundColor(selectedTier == .premium ? AppColors.primaryYellow : Color.blue)
                 
-                if duration != .hourly {
-                    Text(duration == .daily ? "per day" : (duration == .weekly ? "per week" : "per month"))
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
+                Text("per day")
+                    .font(.caption)
+                    .foregroundColor(.gray)
             }
         }
     }
@@ -481,18 +483,6 @@ struct PlanSelectionView: View {
                 .fill(Color.white)
                 .shadow(color: Color.black.opacity(0.05), radius: 8, y: -4)
         )
-    }
-}
-
-// Add hourlyRate to PlanTier
-extension PlanTier {
-    var hourlyRate: Double {
-        switch self {
-        case .standard:
-            return 2.99
-        case .premium:
-            return 4.99
-        }
     }
 }
 

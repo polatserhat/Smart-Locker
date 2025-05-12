@@ -357,6 +357,13 @@ struct HomeView: View {
                 RentalHistoryView()
                     .environmentObject(reservationViewModel)
             }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("DismissToRoot"))) { _ in
+                showLockerMap = false
+                showReservation = false
+                showProfile = false
+                showPlansInfo = false
+                showPastRentals = false
+            }
         }
     }
 }

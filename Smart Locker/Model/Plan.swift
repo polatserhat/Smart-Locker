@@ -9,9 +9,9 @@ enum PlanTier: String, CaseIterable, Identifiable, Codable {
     var description: String {
         switch self {
         case .premium:
-            return "Our premium plan provides enhanced security features and insurance coverage."
+            return "Enhanced security features with insurance coverage for your belongings."
         case .standard:
-            return "Our standard plan offers reliable storage for travelers at an affordable price."
+            return "Basic secure storage with digital access."
         }
     }
     
@@ -19,65 +19,70 @@ enum PlanTier: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .premium:
             return [
-                "You can monitor the Smart Locker Shop instantly",
-                "You will be alerted in case of suspicious movement or an attempt to open the locker",
-                "Up to $500 insurance payment is made if your belongings are stolen"
+                "Real-time locker monitoring",
+                "Suspicious activity alerts",
+                "Up to $500 insurance coverage",
+                "Priority customer support"
             ]
         case .standard:
             return [
-                "Access to digital lockers with QR code unlocking",
-                "View nearby Smart Locker shops on the map and get directions",
-                "Easy and reliable storage for travelers",
-                "Does not include High Security or Insurance"
+                "Digital QR code access",
+                "Basic locker security",
+                "24/7 customer support",
+                "No insurance coverage"
             ]
         }
     }
     
-    var primaryColor: String {
+    // Hourly rates
+    var hourlyRate: Double {
         switch self {
-        case .premium: return "premiumYellow"
-        case .standard: return "standardBlue"
+        case .premium: return 4.99
+        case .standard: return 2.99
+        }
+    }
+    
+    // 24-hour discounted rates (approximately 20% off hourly rate for 24 hours)
+    var dailyRate: Double {
+        switch self {
+        case .premium: return 89.99  // Instead of 119.76 (24 * 4.99)
+        case .standard: return 49.99  // Instead of 71.76 (24 * 2.99)
         }
     }
 }
 
+// For our simplified rental system
 enum PlanDuration: String, CaseIterable, Identifiable, Codable {
     case hourly = "Hourly"
     case daily = "Daily"
-    case weekly = "Weekly"
-    case monthly = "Monthly"
     
     var id: String { self.rawValue }
     
     var description: String {
         switch self {
-        case .hourly: return "Perfect for quick stops"
-        case .daily: return "Ideal for day trips"
-        case .weekly: return "Great for vacations"
-        case .monthly: return "Best for extended travel"
+        case .hourly:
+            return "Pay only for the time you use"
+        case .daily:
+            return "24-hour access with discount"
         }
     }
     
     func getPrice(for tier: PlanTier) -> Double {
-        switch (self, tier) {
-        case (.hourly, .premium): return 3.5
-        case (.hourly, .standard): return 2.0
-        case (.daily, .premium): return 20.0
-        case (.daily, .standard): return 15.0
-        case (.weekly, .premium): return 65.0
-        case (.weekly, .standard): return 50.0
-        case (.monthly, .premium): return 180.0
-        case (.monthly, .standard): return 150.0
+        switch self {
+        case .hourly:
+            return tier.hourlyRate
+        case .daily:
+            return tier.dailyRate
         }
     }
+}
+
+// For direct rentals, we only use hourly
+enum RentalDuration: String, Codable {
+    case hourly = "Hourly"
     
-    var multiplier: Int {
-        switch self {
-        case .hourly: return 1
-        case .daily: return 24
-        case .weekly: return 24 * 7
-        case .monthly: return 24 * 30
-        }
+    var description: String {
+        return "Pay only for the time you use"
     }
 }
 
@@ -85,40 +90,51 @@ struct Plan: Identifiable, Codable {
     var id: String
     var tier: PlanTier
     var duration: PlanDuration
-    var numberOfHours: Int?
+    var startTime: Date
+    var endTime: Date?
     var customPrice: Double?
+    var totalHours: Int?
     
+    // Calculate price based on duration
     var price: Double {
-        if duration == .hourly, let hours = numberOfHours {
-            return tier.hourlyRate * Double(hours)
+        if let customPrice = customPrice {
+            return customPrice
         }
-        return duration.getPrice(for: tier)
+        
+        if let hours = totalHours, hours > 0 {
+            // If rental duration is 24 hours or more, apply daily rate
+            if hours >= 24 {
+                let days = Double(hours) / 24.0
+                return ceil(days) * tier.dailyRate
+            }
+            
+            // Otherwise charge hourly
+            return Double(hours) * tier.hourlyRate
+        }
+        
+        guard let end = endTime else {
+            return tier.hourlyRate // Default to 1 hour if no end time
+        }
+        
+        let hours = Calendar.current.dateComponents([.hour], from: startTime, to: end).hour ?? 0
+        
+        // If rental duration is 24 hours or more, apply daily rate
+        if hours >= 24 {
+            let days = Double(hours) / 24.0
+            return ceil(days) * tier.dailyRate
+        }
+        
+        // Otherwise charge hourly
+        return Double(max(1, hours)) * tier.hourlyRate
     }
     
-    var totalHours: Int {
-        if duration == .hourly, let hours = numberOfHours {
-            return hours
-        }
-        return duration.multiplier
-    }
-    
-    init(tier: PlanTier, duration: PlanDuration, numberOfHours: Int? = nil, price: Double? = nil) {
+    init(tier: PlanTier, duration: PlanDuration = .hourly, startTime: Date = Date(), endTime: Date? = nil, customPrice: Double? = nil, totalHours: Int? = nil) {
         self.id = UUID().uuidString
         self.tier = tier
         self.duration = duration
-        self.numberOfHours = numberOfHours
-        self.customPrice = price
-    }
-    
-    enum CodingKeys: String, CodingKey {
-        case id
-        case tier
-        case duration
-        case numberOfHours
-        case customPrice
-    }
-    
-    static var defaultPlan: Plan {
-        return Plan(tier: .standard, duration: .daily)
+        self.startTime = startTime
+        self.endTime = endTime
+        self.customPrice = customPrice
+        self.totalHours = totalHours
     }
 } 

@@ -181,9 +181,7 @@ struct PaymentConfirmationView: View {
             )
         }
         .fullScreenCover(isPresented: $showSuccess) {
-            RentalSuccessView(dismiss: {
-                dismiss()
-            })
+            RentalSuccessView()
         }
     }
     
@@ -267,48 +265,6 @@ struct PaymentConfirmationView: View {
                     }
                 }
             }
-    }
-}
-
-struct RentalSuccessView: View {
-    var dismiss: () -> Void
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 80))
-                .foregroundColor(AppColors.primaryYellow)
-                .padding(.bottom, 30)
-            
-            Text("Rental Started!")
-                .font(.title)
-                .fontWeight(.bold)
-            
-            Text("Your locker is now available for use. The clock has started, and you'll only be charged for the time you actually use.")
-                .multilineTextAlignment(.center)
-                .font(.body)
-                .foregroundColor(.gray)
-                .padding(.horizontal, 40)
-            
-            Spacer()
-            
-            Button(action: {
-                dismiss()
-            }) {
-                Text("RETURN TO HOME")
-                    .fontWeight(.bold)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(AppColors.primaryBlack)
-                    .foregroundColor(.white)
-                    .cornerRadius(14)
-            }
-            .padding(.bottom, 40)
-            .padding(.horizontal, 24)
-        }
-        .background(Color(UIColor.systemBackground))
     }
 }
 

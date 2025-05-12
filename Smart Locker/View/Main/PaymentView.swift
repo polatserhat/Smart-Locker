@@ -22,11 +22,13 @@ struct PaymentView: View {
     
     private var duration: String {
         if let plan = rental.plan {
-            switch plan.duration {
-            case .hourly: return "\(plan.totalHours) Hour\(plan.totalHours > 1 ? "s" : "")"
-            case .daily: return "\(plan.totalHours / 24) Day\(plan.totalHours > 24 ? "s" : "")"
-            case .weekly: return "\(plan.totalHours / 24 / 7) Week\(plan.totalHours > 24 * 7 ? "s" : "")"
-            case .monthly: return "\(plan.totalHours / 24 / 30) Month\(plan.totalHours > 24 * 30 ? "s" : "")"
+            if let totalHours = plan.totalHours {
+                switch plan.duration {
+                case .hourly: return "\(totalHours) Hour\(totalHours > 1 ? "s" : "")"
+                case .daily: return "1 Day"
+                }
+            } else {
+                return plan.duration.rawValue
             }
         } else {
             return "24 Hours"
@@ -187,9 +189,9 @@ struct PaymentView: View {
             let startDate = Date()
             let endDate: Date
             
-            if let plan = rental.plan {
+            if let plan = rental.plan, let totalHours = plan.totalHours {
                 // Calculate end date based on plan
-                endDate = Calendar.current.date(byAdding: .hour, value: plan.totalHours, to: startDate) ?? Date()
+                endDate = Calendar.current.date(byAdding: .hour, value: totalHours, to: startDate) ?? Date()
             } else {
                 // Default to 1 day
                 endDate = Calendar.current.date(byAdding: .day, value: 1, to: startDate) ?? Date()
@@ -266,18 +268,21 @@ struct PaymentMethodRow: View {
 #Preview {
     PaymentView(
         rental: LockerRental(
-            id: "1",
-            shopName: "Smart Locker Shop - A-103",
-            size: .medium,
-            rentalType: .instant,
-            reservationDate: nil,
+            id: UUID().uuidString,
+            shopName: "Airport Terminal 1",
+            size: LockerSize.medium,
+            rentalType: RentalType.instant,
+            reservationDate: nil as Date?,
+            startTime: nil,
+            endTime: nil,
+            status: .pending,
             totalPrice: 15.0,
-            plan: Plan(tier: .standard, duration: .daily)
+            plan: Plan(tier: .standard, duration: .daily, totalHours: 24)
         ),
         location: LockerLocation(
-            name: "Smart Locker Shop - A-103",
-            coordinate: CLLocationCoordinate2D(latitude: 37.7697, longitude: -122.4269),
-            address: "789 Howard St, San Francisco, CA 94103"
+            name: "Airport Terminal 1",
+            coordinate: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
+            address: "123 Airport Blvd, San Francisco, CA 94128"
         )
     )
     .environmentObject(AuthViewModel())

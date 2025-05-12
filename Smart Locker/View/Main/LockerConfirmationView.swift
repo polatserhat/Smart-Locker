@@ -281,7 +281,7 @@ struct LockerConfirmationView: View {
             endTime: nil,
             status: .pending,
             totalPrice: 15.0,
-            plan: Plan(tier: .standard, duration: .daily)
+            plan: Plan(tier: .standard, duration: .daily, totalHours: 24)
         ),
         location: LockerLocation(
             name: "Airport Terminal 1",
