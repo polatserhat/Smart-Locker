@@ -29,10 +29,12 @@ struct RentalSuccessView: View {
             
             // Return to Home Button
             Button(action: {
-                // This will trigger the full dismissal chain
-                shouldDismissToRoot = true
+                // Post notification first
                 NotificationCenter.default.post(name: NSNotification.Name("DismissToRoot"), object: nil)
-                dismiss()
+                // Then wait a moment before dismissing this view
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    dismiss()
+                }
             }) {
                 Text("RETURN TO HOME")
                     .fontWeight(.semibold)
@@ -46,5 +48,6 @@ struct RentalSuccessView: View {
             .padding(.bottom, 50)
         }
         .background(Color(UIColor.systemBackground))
+        .interactiveDismissDisabled()
     }
 } 

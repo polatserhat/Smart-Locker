@@ -464,10 +464,10 @@ struct PlanSelectionView: View {
                 }
             }) {
                 HStack {
-                    Text("Proceed to Payment")
+                    Text("Proceed to Rent")
                         .fontWeight(.semibold)
                     
-                    Image(systemName: "creditcard.fill")
+                    Image(systemName: "key.fill")
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)

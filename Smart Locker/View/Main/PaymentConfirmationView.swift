@@ -270,14 +270,12 @@ struct PaymentConfirmationView: View {
                     } else {
                         print("Successfully created rental with ID: \(rentalRef.documentID)")
                         self.isCreatingRental = false
-                        self.showSuccess = true
                         
-                        // Update the view model and refresh the map
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                            self.reservationViewModel.fetchRentals(for: user.id)
-                            NotificationCenter.default.post(name: NSNotification.Name("RefreshLockerMap"), object: nil)
-                            self.dismiss()
-                        }
+                        // Update the view model
+                        self.reservationViewModel.fetchRentals(for: user.id)
+                        
+                        // Show success view
+                        self.showSuccess = true
                     }
                 }
             }

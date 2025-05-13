@@ -417,11 +417,19 @@ struct HomeView: View {
                     .environmentObject(reservationViewModel)
             }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("DismissToRoot"))) { _ in
-                showLockerMap = false
-                showReservation = false
-                showProfile = false
-                showPlansInfo = false
-                showPastRentals = false
+                // Dismiss all presented views
+                DispatchQueue.main.async {
+                    showLockerMap = false
+                    showReservation = false
+                    showProfile = false
+                    showPlansInfo = false
+                    showPastRentals = false
+                    
+                    // Refresh the rentals list
+                    if let userId = authViewModel.currentUser?.id {
+                        reservationViewModel.fetchRentals(for: userId)
+                    }
+                }
             }
         }
     }
