@@ -1,5 +1,6 @@
 import SwiftUI
 import MapKit
+import FirebaseFirestore
 
 struct PlanSelectionView: View {
     @Environment(\.dismiss) private var dismiss
@@ -8,6 +9,7 @@ struct PlanSelectionView: View {
     @State private var selectedDuration: PlanDuration = .hourly
     @State private var showConfirmation = false
     @State private var showPlanRequiredHint = false
+    @State private var showRentalSuccess = false
     
     let rental: LockerRental
     let location: LockerLocation
@@ -136,37 +138,14 @@ struct PlanSelectionView: View {
         }
         .edgesIgnoringSafeArea(.bottom)
         .background(Color(UIColor.systemBackground))
-        .fullScreenCover(isPresented: $showConfirmation) {
-            let plan = Plan(
-                tier: selectedTier,
-                duration: selectedDuration,
-                startTime: Date(),
-                totalHours: selectedDuration == .hourly ? 1 : 24
+        .fullScreenCover(isPresented: $showRentalSuccess) {
+            RentalSuccessView(
+                isCompletingRental: false,
+                rental: rental,
+                duration: nil,
+                totalAmount: nil,
+                hourlyRate: rental.size.basePrice
             )
-            let updatedRental = LockerRental(
-                id: rental.id,
-                shopName: rental.shopName,
-                size: rental.size,
-                rentalType: rental.rentalType,
-                reservationDate: rental.reservationDate,
-                startTime: Date(),
-                endTime: selectedDuration == .hourly ? 
-                    Calendar.current.date(byAdding: .hour, value: 1, to: Date()) : 
-                    Calendar.current.date(byAdding: .day, value: 1, to: Date()),
-                status: .active,
-                totalPrice: totalPrice,
-                plan: plan
-            )
-            
-            if rental.rentalType == .instant {
-                // For hourly rentals, go straight to the rental confirmation without payment
-                PaymentConfirmationView(rental: updatedRental, location: location)
-                    .environmentObject(AuthViewModel.shared ?? authViewModel)
-            } else {
-                // For other durations, go to payment view
-                LockerConfirmationView(rental: updatedRental, location: location)
-                    .environmentObject(AuthViewModel.shared ?? authViewModel)
-            }
         }
     }
     
@@ -459,9 +438,7 @@ struct PlanSelectionView: View {
     private var bottomButton: some View {
         VStack {
             Button(action: {
-                withAnimation {
-                    showConfirmation = true
-                }
+                proceedWithRental()
             }) {
                 HStack {
                     Text("Proceed to Rent")
@@ -483,6 +460,106 @@ struct PlanSelectionView: View {
                 .fill(Color.white)
                 .shadow(color: Color.black.opacity(0.05), radius: 8, y: -4)
         )
+    }
+    
+    private func proceedWithRental() {
+        let plan = Plan(
+            tier: selectedTier,
+            duration: selectedDuration,
+            startTime: Date(),
+            totalHours: selectedDuration == .hourly ? 1 : 24
+        )
+        
+        let updatedRental = LockerRental(
+            id: rental.id.isEmpty ? UUID().uuidString : rental.id,
+            shopName: rental.shopName,
+            size: rental.size,
+            rentalType: rental.rentalType,
+            status: .active,
+            plan: plan
+        )
+        
+        // Skip payment and go directly to success screen for new rentals
+        if let user = authViewModel.currentUser {
+            // Create the rental in Firestore
+            let db = Firestore.firestore()
+            let rentalRef = db.collection("rentals").document(updatedRental.id)
+            
+            // Get the locker document to update availability
+            db.collection("lockers")
+                .whereField("locationName", isEqualTo: updatedRental.shopName)
+                .whereField("size", isEqualTo: updatedRental.size.rawValue)
+                .whereField("available", isEqualTo: true)
+                .limit(to: 1)
+                .getDocuments { snapshot, error in
+                    if let error = error {
+                        print("Error finding available locker: \(error.localizedDescription)")
+                        return
+                    }
+                    
+                    guard let lockerDoc = snapshot?.documents.first else {
+                        print("No available lockers found")
+                        return
+                    }
+                    
+                    let lockerId = lockerDoc.documentID
+                    let lockerRef = db.collection("lockers").document(lockerId)
+                    
+                    // Create a batch to update both the locker and create the rental
+                    let batch = db.batch()
+                    
+                    // Update locker availability
+                    batch.updateData([
+                        "available": false,
+                        "status": "occupied",
+                        "currentRentalId": updatedRental.id,
+                        "updatedAt": Timestamp(date: Date())
+                    ], forDocument: lockerRef)
+                    
+                    // Create rental document
+                    let rentalData: [String: Any] = [
+                        "id": updatedRental.id,
+                        "userId": user.id,
+                        "lockerId": lockerId,
+                        "locationName": updatedRental.shopName,
+                        "size": updatedRental.size.rawValue,
+                        "status": "active",
+                        "startDate": Timestamp(date: Date()),
+                        "endDate": NSNull(),
+                        "totalPrice": NSNull(),
+                        "paymentId": NSNull(),
+                        "createdAt": Timestamp(date: Date()),
+                        "updatedAt": Timestamp(date: Date())
+                    ]
+                    
+                    batch.setData(rentalData, forDocument: rentalRef)
+                    
+                    // Update statistics
+                    let statsRef = db.collection("statistics").document("system_stats")
+                    batch.updateData([
+                        "locker_stats.available": FieldValue.increment(Int64(-1)),
+                        "locker_stats.occupied": FieldValue.increment(Int64(1)),
+                        "rental_stats.active_rentals": FieldValue.increment(Int64(1))
+                    ], forDocument: statsRef)
+                    
+                    // Commit the batch
+                    batch.commit { error in
+                        if let error = error {
+                            print("Error creating rental: \(error.localizedDescription)")
+                        } else {
+                            print("Rental created successfully")
+                            
+                            // Post notification to refresh the locker map
+                            NotificationCenter.default.post(name: Notification.Name("RefreshLockerMap"), object: nil)
+                            
+                            // Show success view
+                            showRentalSuccess = true
+                        }
+                    }
+                }
+        } else {
+            print("No user logged in")
+        }
     }
 }
 

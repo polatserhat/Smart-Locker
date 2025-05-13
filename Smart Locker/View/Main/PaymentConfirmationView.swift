@@ -9,6 +9,7 @@ struct PaymentConfirmationView: View {
     @EnvironmentObject private var authViewModel: AuthViewModel
     @EnvironmentObject private var reservationViewModel: ReservationViewModel
     @State private var isCreatingRental = false
+    @State private var isCompletingRental = false
     @State private var showSuccess = false
     @State private var error: String?
     @State private var showError = false
@@ -16,6 +17,21 @@ struct PaymentConfirmationView: View {
     let rental: LockerRental
     let location: LockerLocation
     
+    // Check if this is a new rental or completing an existing one
+    private var isCompletingExistingRental: Bool {
+        return rental.startTime != nil && rental.status == .active
+    }
+    
+    // Dynamic title based on rental state
+    private var pageTitle: String {
+        return isCompletingExistingRental ? "Complete Rental" : "Start Rental"
+    }
+    
+    // Dynamic button text based on rental state
+    private var actionButtonText: String {
+        return isCompletingExistingRental ? "COMPLETE RENTAL" : "START RENTAL"
+    }
+
     var body: some View {
         VStack(spacing: 20) {
             // Header
@@ -30,7 +46,7 @@ struct PaymentConfirmationView: View {
                 
                 Spacer()
                 
-                Text("Start Rental")
+                Text(pageTitle)
                     .font(.title3)
                     .fontWeight(.bold)
                 
@@ -44,20 +60,28 @@ struct PaymentConfirmationView: View {
             
             // Rental details card
             VStack(spacing: 16) {
-                Image(systemName: "clock.fill")
+                Image(systemName: isCompletingExistingRental ? "checkmark.circle.fill" : "clock.fill")
                     .font(.system(size: 50))
                     .foregroundColor(AppColors.primaryYellow)
                     .padding(.bottom, 10)
                 
-                Text("Hourly Rental Ready")
+                Text(isCompletingExistingRental ? "Rental Completion" : "Hourly Rental Ready")
                     .font(.title2)
                     .fontWeight(.bold)
                 
-                Text("Your locker is ready to use. Your rental will begin once you click 'Start Rental' below.")
-                    .multilineTextAlignment(.center)
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                    .padding(.horizontal)
+                if isCompletingExistingRental {
+                    Text("Your rental is complete. Click 'Complete Rental' to finalize and process payment.")
+                        .multilineTextAlignment(.center)
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                        .padding(.horizontal)
+                } else {
+                    Text("Your locker is ready to use. Your rental will begin once you click 'Start Rental' below.")
+                        .multilineTextAlignment(.center)
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                        .padding(.horizontal)
+                }
                 
                 Divider()
                     .padding(.vertical, 10)
@@ -106,22 +130,63 @@ struct PaymentConfirmationView: View {
                 }
                 .padding(.bottom, 8)
                 
-                // Start time
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Start Time")
-                        .font(.headline)
-                        .foregroundColor(.gray)
-                    
-                    HStack {
-                        Image(systemName: "clock")
-                            .foregroundColor(AppColors.primaryYellow)
+                // Start time or duration info
+                if isCompletingExistingRental, let startTime = rental.startTime {
+                    // Duration information for completing rental
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Rental Duration")
+                            .font(.headline)
+                            .foregroundColor(.gray)
                         
-                        Text(Date(), style: .time)
-                            .font(.title3)
-                            .fontWeight(.semibold)
+                        let duration = calculateDuration(from: startTime, to: Date())
+                        
+                        HStack {
+                            Image(systemName: "clock")
+                                .foregroundColor(AppColors.primaryYellow)
+                            
+                            Text(duration)
+                                .font(.title3)
+                                .fontWeight(.semibold)
+                        }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    // Total cost
+                    if let totalPrice = rental.totalPrice {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Total Cost")
+                                .font(.headline)
+                                .foregroundColor(.gray)
+                            
+                            HStack {
+                                Image(systemName: "dollarsign.circle")
+                                    .foregroundColor(AppColors.primaryYellow)
+                                
+                                Text("$\(String(format: "%.2f", totalPrice))")
+                                    .font(.title3)
+                                    .fontWeight(.semibold)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                } else {
+                    // Start time for new rental
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Start Time")
+                            .font(.headline)
+                            .foregroundColor(.gray)
+                        
+                        HStack {
+                            Image(systemName: "clock")
+                                .foregroundColor(AppColors.primaryYellow)
+                            
+                            Text(Date(), style: .time)
+                                .font(.title3)
+                                .fontWeight(.semibold)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding()
             .background(Color.white)
@@ -136,25 +201,38 @@ struct PaymentConfirmationView: View {
                     .font(.headline)
                     .foregroundColor(AppColors.primaryBlack)
                 
-                Text("You will be charged based on the actual usage time when you end the rental. The hourly rate will be applied to calculate the final amount.")
-                    .multilineTextAlignment(.center)
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
+                if isCompletingExistingRental {
+                    Text("Once you complete this rental, your payment method will be charged based on your usage time. The locker will become available for other users.")
+                        .multilineTextAlignment(.center)
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                } else {
+                    Text("You will be charged based on the actual usage time when you end the rental. The hourly rate will be applied to calculate the final amount.")
+                        .multilineTextAlignment(.center)
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                }
             }
             .padding()
             .background(Color.white)
             .cornerRadius(16)
             .shadow(color: Color.black.opacity(0.05), radius: 10)
             
-            // Start Rental Button
+            // Start/Complete Rental Button
             Button(action: {
-                startRental()
+                if isCompletingExistingRental {
+                    completeRental()
+                } else {
+                    // We're now using the PlanSelectionView for starting rentals
+                    // This should never get called now
+                    dismiss()
+                }
             }) {
                 HStack {
-                    Text("START RENTAL")
+                    Text(actionButtonText)
                         .fontWeight(.bold)
                     
-                    if isCreatingRental {
+                    if isCompletingRental {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             .padding(.leading, 5)
@@ -170,7 +248,7 @@ struct PaymentConfirmationView: View {
                 .shadow(color: AppColors.primaryYellow.opacity(0.3), radius: 10, x: 0, y: 5)
             }
             .padding(.top, 20)
-            .disabled(isCreatingRental)
+            .disabled(isCompletingRental)
         }
         .padding(.horizontal, 24)
         .background(Color(UIColor.systemBackground))
@@ -182,94 +260,115 @@ struct PaymentConfirmationView: View {
             )
         }
         .fullScreenCover(isPresented: $showSuccess) {
-            RentalSuccessView()
+            RentalSuccessView(
+                isCompletingRental: isCompletingExistingRental,
+                rental: rental,
+                duration: isCompletingExistingRental ? calculateDuration(from: rental.startTime ?? Date(), to: Date()) : nil,
+                totalAmount: rental.totalPrice,
+                hourlyRate: rental.size.basePrice
+            )
         }
     }
     
-    private func startRental() {
+    // Calculate duration string
+    private func calculateDuration(from startDate: Date, to endDate: Date) -> String {
+        let components = Calendar.current.dateComponents([.hour, .minute], from: startDate, to: endDate)
+        let hours = components.hour ?? 0
+        let minutes = components.minute ?? 0
+        
+        if hours > 0 {
+            return "\(hours) hour\(hours > 1 ? "s" : "") \(minutes) minute\(minutes > 1 ? "s" : "")"
+        } else {
+            return "\(minutes) minute\(minutes > 1 ? "s" : "")"
+        }
+    }
+    
+    private func completeRental() {
         guard let user = authViewModel.currentUser else {
-            error = "You must be logged in to rent a locker."
+            error = "You must be logged in to complete the rental."
             showError = true
             return
         }
         
-        isCreatingRental = true
+        isCompletingRental = true
         let db = Firestore.firestore()
         
-        // 1. Find an available locker
-        db.collection("lockers")
-            .whereField("locationName", isEqualTo: location.name)
-            .whereField("size", isEqualTo: rental.size.rawValue)
-            .whereField("available", isEqualTo: true)
+        // Find the actual active rental document
+        db.collection("rentals")
+            .whereField("userId", isEqualTo: user.id)
+            .whereField("status", isEqualTo: "active")
             .limit(to: 1)
             .getDocuments { snapshot, error in
                 if let error = error {
-                    self.error = "Error finding locker: \(error.localizedDescription)"
+                    self.error = "Error finding rental: \(error.localizedDescription)"
                     self.showError = true
-                    self.isCreatingRental = false
+                    self.isCompletingRental = false
                     return
                 }
                 
-                guard let locker = snapshot?.documents.first else {
-                    self.error = "No available lockers found"
+                guard let rentalDoc = snapshot?.documents.first else {
+                    self.error = "Active rental not found"
                     self.showError = true
-                    self.isCreatingRental = false
+                    self.isCompletingRental = false
                     return
                 }
                 
-                print("Found available locker: \(locker.documentID)")
+                // Get the locker ID from the rental
+                guard let lockerId = rentalDoc.data()["lockerId"] as? String else {
+                    self.error = "Locker information missing"
+                    self.showError = true
+                    self.isCompletingRental = false
+                    return
+                }
                 
-                // 2. Create rental and update locker status
+                print("Found rental to complete: \(rentalDoc.documentID) with locker: \(lockerId)")
+                
+                // Complete the rental with batch operations
                 let batch = db.batch()
-                let rentalRef = db.collection("rentals").document()
-                let startDate = Date()
+                let rentalRef = rentalDoc.reference
+                let endDate = Date()
                 
-                // Rental data
-                let rentalData: [String: Any] = [
-                    "id": rentalRef.documentID,
-                    "userId": user.id,
-                    "lockerId": locker.documentID,
-                    "locationId": location.id.uuidString,
-                    "locationName": location.name,
-                    "locationAddress": location.address,
-                    "size": rental.size.rawValue,
-                    "startDate": Timestamp(date: startDate),
-                    "endDate": Timestamp(date: startDate.addingTimeInterval(12 * 3600)), // 12 hours max
-                    "status": "active",
-                    "createdAt": Timestamp(date: startDate),
-                    "updatedAt": Timestamp(date: startDate)
-                ]
-                
-                // Set the rental data
-                batch.setData(rentalData, forDocument: rentalRef)
+                // Update rental status
+                batch.updateData([
+                    "status": "completed",
+                    "endDate": Timestamp(date: endDate),
+                    "totalPrice": rental.totalPrice ?? 0,
+                    "updatedAt": Timestamp(date: endDate)
+                ], forDocument: rentalRef)
                 
                 // Update locker status and availability
+                let lockerRef = db.collection("lockers").document(lockerId)
                 batch.updateData([
-                    "available": false,
-                    "status": "occupied",
-                    "currentRentalId": rentalRef.documentID,
-                    "updatedAt": Timestamp(date: startDate)
-                ], forDocument: locker.reference)
+                    "available": true,
+                    "status": "available",
+                    "currentRentalId": nil,
+                    "updatedAt": Timestamp(date: endDate)
+                ], forDocument: lockerRef)
                 
                 // Update statistics
                 let statsRef = db.collection("statistics").document("system_stats")
                 batch.updateData([
-                    "locker_stats.available": FieldValue.increment(Int64(-1)),
-                    "locker_stats.occupied": FieldValue.increment(Int64(1)),
-                    "rental_stats.active_rentals": FieldValue.increment(Int64(1)),
-                    "last_updated": Timestamp(date: startDate)
+                    "locker_stats.available": FieldValue.increment(Int64(1)),
+                    "locker_stats.occupied": FieldValue.increment(Int64(-1)),
+                    "rental_stats.active_rentals": FieldValue.increment(Int64(-1)),
+                    "revenue_stats.total_revenue": FieldValue.increment(rental.totalPrice ?? 0),
+                    "revenue_stats.today_revenue": FieldValue.increment(rental.totalPrice ?? 0),
+                    "last_updated": Timestamp(date: endDate)
                 ], forDocument: statsRef)
                 
                 // Commit the batch
                 batch.commit { error in
                     if let error = error {
-                        print("Error creating rental: \(error.localizedDescription)")
-                        self.error = "Error creating rental: \(error.localizedDescription)"
+                        print("Error completing rental: \(error.localizedDescription)")
+                        self.error = "Error completing rental: \(error.localizedDescription)"
                         self.showError = true
-                        self.isCreatingRental = false
+                        self.isCompletingRental = false
                     } else {
-                        print("Successfully created rental with ID: \(rentalRef.documentID)")
-                        self.isCreatingRental = false
+                        print("Successfully completed rental with ID: \(rentalRef.documentID)")
+                        self.isCompletingRental = false
+                        
+                        // Post a notification to refresh the available lockers
+                        NotificationCenter.default.post(name: Notification.Name("RefreshLockerMap"), object: nil)
                         
                         // Update the view model
                         self.reservationViewModel.fetchRentals(for: user.id)

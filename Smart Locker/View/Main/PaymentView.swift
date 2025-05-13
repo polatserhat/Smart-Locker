@@ -14,6 +14,11 @@ struct PaymentView: View {
     let rental: LockerRental
     let location: LockerLocation
     
+    // Check if this is a completing an existing rental
+    private var isCompletingExistingRental: Bool {
+        return rental.startTime != nil && rental.status == .active
+    }
+    
     let paymentMethods = [
         PaymentMethod(name: "Credit/Debit Card", icon: "creditcard.fill", isSelected: true),
         PaymentMethod(name: "Apple Pay", icon: "apple.logo", isSelected: false),
@@ -21,7 +26,15 @@ struct PaymentView: View {
     ]
     
     private var duration: String {
-        if let plan = rental.plan {
+        if isCompletingExistingRental, let startTime = rental.startTime {
+            // For existing rentals, calculate actual duration
+            let components = Calendar.current.dateComponents([.hour, .minute], from: startTime, to: Date())
+            let hours = components.hour ?? 0
+            let minutes = components.minute ?? 0
+            
+            return "\(hours) hour\(hours > 1 ? "s" : "") \(minutes) minute\(minutes > 1 ? "s" : "")"
+        } else if let plan = rental.plan {
+            // For new rentals with a plan
             if let totalHours = plan.totalHours {
                 switch plan.duration {
                 case .hourly: return "\(totalHours) Hour\(totalHours > 1 ? "s" : "")"
@@ -36,18 +49,31 @@ struct PaymentView: View {
     }
     
     private var totalPrice: Double {
+        // If completing an existing rental, use the precalculated price
+        if isCompletingExistingRental {
+            return rental.totalPrice ?? 0
+        }
+        // For new rentals, calculate based on plan
         return rental.totalPrice ?? (rental.plan?.price ?? rental.size.basePrice) * 1.1
+    }
+    
+    private var checkoutTitle: String {
+        return isCompletingExistingRental ? "Complete Payment" : "Secure Checkout"
+    }
+    
+    private var checkoutSubtitle: String {
+        return isCompletingExistingRental ? "Complete your rental payment" : "Complete your rental payment"
     }
     
     var body: some View {
         VStack(spacing: 24) {
             // Header
             VStack(spacing: 8) {
-                Text("Secure Checkout")
+                Text(checkoutTitle)
                     .font(.title2)
                     .fontWeight(.bold)
                 
-                Text("Complete your rental payment")
+                Text(checkoutSubtitle)
                     .font(.subheadline)
                     .foregroundColor(.gray)
             }
@@ -64,11 +90,11 @@ struct PaymentView: View {
                             OrderDetailRow(title: "Locker Shop", value: rental.shopName)
                             OrderDetailRow(title: "Selected Size", value: "\(rental.size.rawValue) (\(rental.size.dimensions))")
                             
-                            if let plan = rental.plan {
+                            if !isCompletingExistingRental, let plan = rental.plan {
                                 OrderDetailRow(title: "Selected Plan", value: "\(plan.tier.rawValue) - \(plan.duration.rawValue)")
                             }
                             
-                            OrderDetailRow(title: "Duration", value: duration)
+                            OrderDetailRow(title: isCompletingExistingRental ? "Usage Time" : "Duration", value: duration)
                             OrderDetailRow(title: "Total Amount", value: "$\(String(format: "%.2f", totalPrice))", isTotal: true)
                         }
                     }
@@ -172,6 +198,9 @@ struct PaymentView: View {
         } message: {
             Text(error ?? "An error occurred")
         }
+        .onAppear {
+            print("PaymentView appeared with rental: \(rental.id), startTime: \(String(describing: rental.startTime)), totalPrice: \(String(describing: rental.totalPrice))")
+        }
     }
     
     private func processPayment() {
@@ -185,36 +214,9 @@ struct PaymentView: View {
         
         // Simulate payment processing
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            // Create rental in Firestore
-            let startDate = Date()
-            let endDate: Date
-            
-            if let plan = rental.plan, let totalHours = plan.totalHours {
-                // Calculate end date based on plan
-                endDate = Calendar.current.date(byAdding: .hour, value: totalHours, to: startDate) ?? Date()
-            } else {
-                // Default to 1 day
-                endDate = Calendar.current.date(byAdding: .day, value: 1, to: startDate) ?? Date()
-            }
-            
-            FirestoreService.shared.createRental(
-                userId: userId,
-                location: location,
-                size: rental.size,
-                startDate: startDate,
-                endDate: endDate,
-                totalPrice: totalPrice
-            ) { result in
-                isProcessing = false
-                
-                switch result {
-                case .success:
-                    showConfirmation = true
-                case .failure(let error):
-                    self.error = error.localizedDescription
-                    showError = true
-                }
-            }
+            isProcessing = false
+            // Show confirmation screen after payment is processed
+            showConfirmation = true
         }
     }
 }

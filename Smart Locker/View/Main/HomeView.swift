@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseFirestore
+import MapKit
 
 
 struct CategoryButton: View {
@@ -35,6 +36,13 @@ struct HomeView: View {
     @State private var showProfile = false
     @State private var showPlansInfo = false
     @State private var showPastRentals = false
+    @State private var showPayment = false
+    @State private var showPaymentConfirmation = false
+    @State private var currentRentalTimer: Timer?
+    @State private var elapsedTime: TimeInterval = 0
+    @State private var calculatedAmount: Double = 0
+    @State private var selectedRental: LockerRental?
+    @State private var selectedLocation: LockerLocation?
     @EnvironmentObject private var authViewModel: AuthViewModel
     @EnvironmentObject private var reservationViewModel: ReservationViewModel
     
@@ -59,15 +67,94 @@ struct HomeView: View {
         return db.collection("statistics").document("system_stats")
     }
     
+    private func startTimer(for rental: Rental) {
+        // Stop any existing timer first
+        stopTimer()
+        
+        // Calculate initial elapsed time
+        elapsedTime = Date().timeIntervalSince(rental.startDate)
+        
+        // Create a new timer that fires every second
+        currentRentalTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            self.elapsedTime = Date().timeIntervalSince(rental.startDate)
+        }
+        
+        // Add the timer to RunLoop to ensure it runs properly
+        if let timer = currentRentalTimer {
+            RunLoop.current.add(timer, forMode: .common)
+        }
+    }
+    
+    private func stopTimer() {
+        currentRentalTimer?.invalidate()
+        currentRentalTimer = nil
+    }
+    
+    private func formatElapsedTime(_ timeInterval: TimeInterval) -> String {
+        let hours = Int(timeInterval) / 3600
+        let minutes = Int(timeInterval) / 60 % 60
+        let seconds = Int(timeInterval) % 60
+        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+    }
+    
     private func endActiveRental(activeRental: Rental) {
-        // Calculate final price and end rental
+        print("🔴 endActiveRental called for rental: \(activeRental.id)")
+        stopTimer()
+        
+        // Create a LockerRental object from the active rental
+        selectedRental = LockerRental(
+            id: activeRental.id,
+            shopName: activeRental.locationName,
+            size: LockerSize(rawValue: activeRental.size) ?? .medium,
+            rentalType: .instant,
+            startTime: activeRental.startDate,
+            status: .active  // Mark as active to indicate this is an ending rental
+        )
+        
+        // Create a LockerLocation object
+        selectedLocation = LockerLocation(
+            name: activeRental.locationName,
+            coordinate: CLLocationCoordinate2D(latitude: 0, longitude: 0), // These will be updated from Firestore
+            address: activeRental.locationName
+        )
+        
+        // Calculate final price
         let endTime = Date()
         let startTime = activeRental.startDate
         let totalHours = calculateTotalHours(from: startTime, to: endTime)
         
+        print("🔴 Calculated total hours: \(totalHours)")
+        
         // Get pricing from the locker document
         let db = Firestore.firestore()
-        fetchLockerPricing(db: db, lockerId: activeRental.lockerId, activeRental: activeRental, endTime: endTime, totalHours: totalHours)
+        db.collection("lockers")
+            .document(activeRental.lockerId)
+            .getDocument { snapshot, error in
+                if let error = error {
+                    print("🔴 Error fetching locker: \(error.localizedDescription)")
+                    return
+                }
+                
+                guard let data = snapshot?.data(),
+                      let pricing = data["pricing"] as? [String: Any],
+                      let standardPricing = pricing["standard"] as? [String: Any],
+                      let hourlyRate = standardPricing["hourly"] as? Double else {
+                    print("🔴 Error getting pricing data")
+                    return
+                }
+                
+                self.calculatedAmount = max(hourlyRate * totalHours, hourlyRate) // Minimum of 1 hour
+                print("🔴 Calculated amount: \(self.calculatedAmount)")
+                
+                // Update the rental object with the calculated price
+                if var updatedRental = self.selectedRental {
+                    updatedRental.totalPrice = self.calculatedAmount
+                    self.selectedRental = updatedRental
+                    
+                    // Show payment view first
+                    self.showPayment = true
+                }
+            }
     }
     
     private func fetchLockerPricing(db: Firestore, lockerId: String, activeRental: Rental, endTime: Date, totalHours: Double) {
@@ -183,6 +270,14 @@ struct HomeView: View {
         ])
     }
     
+    // Return to home screen after payment complete
+    private func refreshData() {
+        // Refresh the rentals list
+        if let userId = authViewModel.currentUser?.id {
+            reservationViewModel.fetchRentals(for: userId)
+        }
+    }
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
@@ -275,13 +370,22 @@ struct HomeView: View {
                                     
                                     Spacer()
                                     
-                                    Text(activeRental.startDate, style: .time)
+                                    // Timer display
+                                    Text(formatElapsedTime(elapsedTime))
                                         .font(.system(size: 16, weight: .medium))
                                         .foregroundColor(AppColors.primaryYellow)
+                                        .monospacedDigit()
+                                }
+                                .onAppear {
+                                    startTimer(for: activeRental)
+                                }
+                                .onDisappear {
+                                    stopTimer()
                                 }
                                 
                                 if activeRental.status == "active" {
                                     Button(action: {
+                                        print("🔴 End Rental button pressed")
                                         endActiveRental(activeRental: activeRental)
                                     }) {
                                         Text("End Rental")
@@ -416,6 +520,51 @@ struct HomeView: View {
                 RentalHistoryView()
                     .environmentObject(reservationViewModel)
             }
+            .fullScreenCover(isPresented: $showPayment) {
+                Group {
+                    if let rental = selectedRental, let location = selectedLocation {
+                        PaymentView(rental: rental, location: location)
+                    } else {
+                        Text("Error loading payment view")
+                            .padding()
+                            .background(Color.red.opacity(0.1))
+                            .cornerRadius(8)
+                    }
+                }
+            }
+            .fullScreenCover(isPresented: $showPaymentConfirmation) {
+                if let rental = selectedRental, let location = selectedLocation {
+                    PaymentConfirmationView(rental: rental, location: location)
+                        .environmentObject(authViewModel)
+                        .environmentObject(reservationViewModel)
+                        .onDisappear {
+                            refreshData()
+                            
+                            // Reset state if needed
+                            selectedRental = nil
+                            selectedLocation = nil
+                        }
+                }
+            }
+            .onChange(of: showPayment) { newValue in
+                if newValue {
+                    if let rental = selectedRental, let location = selectedLocation {
+                        print("🔴 Presenting PaymentView with rental: \(rental.id)")
+                    } else {
+                        print("🔴 Error: selectedRental or selectedLocation is nil")
+                    }
+                }
+            }
+            .onAppear {
+                // Start timer for active rental when view appears
+                if let activeRental = reservationViewModel.currentRentals.first {
+                    startTimer(for: activeRental)
+                }
+            }
+            .onDisappear {
+                // Stop timer when view disappears
+                stopTimer()
+            }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("DismissToRoot"))) { _ in
                 // Dismiss all presented views
                 DispatchQueue.main.async {
@@ -424,6 +573,12 @@ struct HomeView: View {
                     showProfile = false
                     showPlansInfo = false
                     showPastRentals = false
+                    showPayment = false
+                    showPaymentConfirmation = false
+                    
+                    // Reset rental states
+                    selectedRental = nil
+                    selectedLocation = nil
                     
                     // Refresh the rentals list
                     if let userId = authViewModel.currentUser?.id {
