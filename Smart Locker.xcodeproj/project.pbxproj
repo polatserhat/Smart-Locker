@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7328B7122DD9197D00BEFA78 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 7328B7112DD9197D00BEFA78 /* Kingfisher */; };
 		73B7BD572D7B8ABF00DE5623 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 73B7BD562D7B8ABF00DE5623 /* FirebaseAuth */; };
 		73B7BD592D7B8ABF00DE5623 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 73B7BD582D7B8ABF00DE5623 /* FirebaseFirestore */; };
 		73B7BD5B2D7B8ABF00DE5623 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 73B7BD5A2D7B8ABF00DE5623 /* FirebaseStorage */; };
@@ -29,6 +30,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7328B7122DD9197D00BEFA78 /* Kingfisher in Frameworks */,
 				73B7BD572D7B8ABF00DE5623 /* FirebaseAuth in Frameworks */,
 				73B7BD592D7B8ABF00DE5623 /* FirebaseFirestore in Frameworks */,
 				73B7BD5B2D7B8ABF00DE5623 /* FirebaseStorage in Frameworks */,
@@ -77,6 +79,7 @@
 				73B7BD562D7B8ABF00DE5623 /* FirebaseAuth */,
 				73B7BD582D7B8ABF00DE5623 /* FirebaseFirestore */,
 				73B7BD5A2D7B8ABF00DE5623 /* FirebaseStorage */,
+				7328B7112DD9197D00BEFA78 /* Kingfisher */,
 			);
 			productName = "Smart Locker";
 			productReference = 73B7BD442D7B82D100DE5623 /* Smart Locker.app */;
@@ -108,6 +111,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				73B7BD552D7B8ABF00DE5623 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				7328B7102DD9197D00BEFA78 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 73B7BD452D7B82D100DE5623 /* Products */;
@@ -267,7 +271,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Smart Locker/Preview Content\"";
-				DEVELOPMENT_TEAM = DJ9J8Z826A;
+				DEVELOPMENT_TEAM = CR9Z97VXWX;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Smart-Locker-Info.plist";
@@ -297,7 +301,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Smart Locker/Preview Content\"";
-				DEVELOPMENT_TEAM = DJ9J8Z826A;
+				DEVELOPMENT_TEAM = CR9Z97VXWX;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Smart-Locker-Info.plist";
@@ -343,6 +347,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		7328B7102DD9197D00BEFA78 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.3.2;
+			};
+		};
 		73B7BD552D7B8ABF00DE5623 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
@@ -354,6 +366,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		7328B7112DD9197D00BEFA78 /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7328B7102DD9197D00BEFA78 /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
+		};
 		73B7BD562D7B8ABF00DE5623 /* FirebaseAuth */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 73B7BD552D7B8ABF00DE5623 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

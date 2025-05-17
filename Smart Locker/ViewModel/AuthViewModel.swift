@@ -158,16 +158,19 @@ class AuthViewModel: ObservableObject {
             guard let data = snapshot?.data(),
                   let name = data["name"] as? String,
                   let email = data["email"] as? String else {
-                print("Invalid or missing user data in Firestore")
+                print("Invalid or missing user data in Firestore for userId: \(userId)")
                 return
             }
+            
+            // Fetch the profileImageUrl from the snapshot
+            let profileImageUrl = data["profileImageUrl"] as? String
             
             DispatchQueue.main.async {
                 self.currentUser = User(
                     id: userId,
                     name: name,
                     email: email,
-                    profileImageUrl: nil
+                    profileImageUrl: profileImageUrl
                 )
             }
         }
@@ -325,6 +328,47 @@ class AuthViewModel: ObservableObject {
                         completion(false, errorMessage)
                     } else {
                         completion(true, nil)
+                    }
+                }
+            }
+        }
+    }
+
+    // New function to update profile image
+    func updateProfileImage(image: UIImage) {
+        guard let userId = currentUser?.id else {
+            errorMessage = "User not found."
+            return
+        }
+
+        isLoading = true
+        errorMessage = nil
+
+        StorageService.shared.uploadProfileImage(image, userId: userId) { [weak self] result in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                self.isLoading = false
+                switch result {
+                case .success(let url):
+                    let profileImageUrlString = url.absoluteString
+                    self.firestore.collection("users").document(userId).updateData(["profileImageUrl": profileImageUrlString]) { error in
+                        if let error = error {
+                            self.errorMessage = "Failed to update profile image in Firestore: \(error.localizedDescription)"
+                        } else {
+                            self.currentUser?.profileImageUrl = profileImageUrlString
+                        }
+                    }
+                case .failure(let error):
+                    // Handle specific StorageService errors if needed, or a generic message
+                    switch error {
+                    case .imageDataConversionFailed:
+                        self.errorMessage = "Failed to prepare image for upload."
+                    case .uploadFailed(let err):
+                        self.errorMessage = "Image upload failed: \(err.localizedDescription). Check Firebase Storage rules."
+                    case .getDownloadURLFailed(let err):
+                        self.errorMessage = "Failed to get image URL: \(err.localizedDescription)."
+                    default:
+                        self.errorMessage = "An unknown error occurred while uploading the image."
                     }
                 }
             }

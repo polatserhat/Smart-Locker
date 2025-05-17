@@ -6,9 +6,11 @@
 //
 
 import SwiftUI
+import PhotosUI
+import Kingfisher
 
 // Import Profile views directly (they're in a different directory)
-import SwiftUI
+// import SwiftUI // This is redundant, removing
 
 struct ProfilePageView: View {
     @AppStorage("isDarkMode") private var isDarkMode: Bool = false
@@ -19,6 +21,10 @@ struct ProfilePageView: View {
     @State private var showUpdatePassword = false
     @State private var showRentalHistory = false
     @State private var showActiveRentals = false
+    
+    // State for photo picker
+    @State private var selectedPhotoItem: PhotosPickerItem? = nil
+    @State private var selectedImageData: Data? = nil
     
     var body: some View {
         NavigationView {
@@ -39,13 +45,38 @@ struct ProfilePageView: View {
                     
                     // Profile Header
                     VStack(spacing: 16) {
-                        Image("profile_placeholder")
-                            .resizable()
-                            .scaledToFill()
+                        PhotosPicker(selection: $selectedPhotoItem, matching: .images, photoLibrary: .shared()) {
+                            Group {
+                                if let profileUrlString = authViewModel.currentUser?.profileImageUrl, let url = URL(string: profileUrlString) {
+                                    KFImage(url)
+                                        .placeholder { // Placeholder while loading or if URL is invalid
+                                            Image("profile_placeholder")
+                                                .resizable()
+                                                .scaledToFill()
+                                        }
+                                        .resizable()
+                                        .scaledToFill()
+                                } else {
+                                    Image("profile_placeholder") // Default placeholder
+                                        .resizable()
+                                        .scaledToFill()
+                                }
+                            }
                             .frame(width: 100, height: 100)
                             .clipShape(Circle())
                             .overlay(Circle().stroke(AppColors.primaryBlack, lineWidth: 3))
                             .shadow(color: AppColors.primaryYellow.opacity(0.3), radius: 10)
+                        }
+                        .onChange(of: selectedPhotoItem) { newItem in
+                            Task {
+                                if let data = try? await newItem?.loadTransferable(type: Data.self) {
+                                    selectedImageData = data
+                                    if let imageData = selectedImageData, let uiImage = UIImage(data: imageData) {
+                                        authViewModel.updateProfileImage(image: uiImage)
+                                    }
+                                }
+                            }
+                        }
                         
                         VStack(spacing: 8) {
                             Text(authViewModel.currentUser?.name ?? "User")
@@ -158,6 +189,20 @@ struct ProfilePageView: View {
             }
         }
         .preferredColorScheme(isDarkMode ? .dark : .light)
+        .onAppear {
+            // This is a good place to fetch user data if it might be stale,
+            // though AuthViewModel already fetches on auth state change.
+            // If an error occurs during image upload, display it.
+            // Consider adding an alert to show authViewModel.errorMessage if it's not nil.
+        }
+        // Add an alert to display errors from AuthViewModel
+        .alert("Error", isPresented: .constant(authViewModel.errorMessage != nil), actions: {
+            Button("OK", role: .cancel) {
+                authViewModel.errorMessage = nil // Clear the error message
+            }
+        }, message: {
+            Text(authViewModel.errorMessage ?? "An unknown error occurred.")
+        })
     }
 }
 
