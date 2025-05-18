@@ -271,7 +271,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Smart Locker/Preview Content\"";
-				DEVELOPMENT_TEAM = CR9Z97VXWX;
+				DEVELOPMENT_TEAM = DJ9J8Z826A;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Smart-Locker-Info.plist";
@@ -285,7 +285,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.serhatpolat.Smart-Locker";
+				PRODUCT_BUNDLE_IDENTIFIER = com.oguzhansonmez.SmartLocker;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -301,7 +301,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Smart Locker/Preview Content\"";
-				DEVELOPMENT_TEAM = CR9Z97VXWX;
+				DEVELOPMENT_TEAM = DJ9J8Z826A;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Smart-Locker-Info.plist";
@@ -315,7 +315,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.serhatpolat.Smart-Locker";
+				PRODUCT_BUNDLE_IDENTIFIER = com.oguzhansonmez.SmartLocker;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
