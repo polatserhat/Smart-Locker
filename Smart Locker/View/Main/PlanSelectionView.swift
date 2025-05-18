@@ -10,6 +10,9 @@ struct PlanSelectionView: View {
     @State private var showConfirmation = false
     @State private var showPlanRequiredHint = false
     @State private var showRentalSuccess = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @State private var isProcessing = false
     
     let rental: LockerRental
     let location: LockerLocation
@@ -146,6 +149,11 @@ struct PlanSelectionView: View {
                 totalAmount: nil,
                 hourlyRate: rental.size.basePrice
             )
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage)
         }
     }
     
@@ -441,18 +449,27 @@ struct PlanSelectionView: View {
                 proceedWithRental()
             }) {
                 HStack {
-                    Text("Proceed to Rent")
+                    if isProcessing {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .padding(.trailing, 8)
+                    }
+                    
+                    Text(isProcessing ? "Processing..." : "Proceed to Rent")
                         .fontWeight(.semibold)
                     
-                    Image(systemName: "key.fill")
+                    if !isProcessing {
+                        Image(systemName: "key.fill")
+                    }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
-                .background(AppColors.primaryBlack)
+                .background(isProcessing ? Color.gray : AppColors.primaryBlack)
                 .foregroundColor(.white)
                 .cornerRadius(12)
                 .shadow(color: Color.black.opacity(0.2), radius: 5)
             }
+            .disabled(isProcessing)
         }
         .padding()
         .background(
@@ -463,103 +480,104 @@ struct PlanSelectionView: View {
     }
     
     private func proceedWithRental() {
-        let plan = Plan(
-            tier: selectedTier,
-            duration: selectedDuration,
-            startTime: Date(),
-            totalHours: selectedDuration == .hourly ? 1 : 24
-        )
+        guard !isProcessing else { return }
+        isProcessing = true
         
-        let updatedRental = LockerRental(
-            id: rental.id.isEmpty ? UUID().uuidString : rental.id,
-            shopName: rental.shopName,
-            size: rental.size,
-            rentalType: rental.rentalType,
-            status: .active,
-            plan: plan
-        )
+        guard let user = authViewModel.currentUser else {
+            DispatchQueue.main.async {
+                errorMessage = "Please log in to continue"
+                showError = true
+                isProcessing = false
+            }
+            return
+        }
         
-        // Skip payment and go directly to success screen for new rentals
-        if let user = authViewModel.currentUser {
-            // Create the rental in Firestore
-            let db = Firestore.firestore()
-            let rentalRef = db.collection("rentals").document(updatedRental.id)
-            
-            // Get the locker document to update availability
-            db.collection("lockers")
-                .whereField("locationName", isEqualTo: updatedRental.shopName)
-                .whereField("size", isEqualTo: updatedRental.size.rawValue)
-                .whereField("available", isEqualTo: true)
-                .limit(to: 1)
-                .getDocuments { snapshot, error in
-                    if let error = error {
-                        print("Error finding available locker: \(error.localizedDescription)")
-                        return
+        let rentalId = rental.id.isEmpty ? UUID().uuidString : rental.id
+        
+        // Create the rental in Firestore
+        let db = Firestore.firestore()
+        
+        // Get the locker document to update availability
+        db.collection("lockers")
+            .whereField("locationName", isEqualTo: rental.shopName)
+            .whereField("size", isEqualTo: rental.size.rawValue)
+            .whereField("available", isEqualTo: true)
+            .limit(to: 1)
+            .getDocuments { snapshot, error in
+                if let error = error {
+                    DispatchQueue.main.async {
+                        errorMessage = "Error finding available locker: \(error.localizedDescription)"
+                        showError = true
+                        isProcessing = false
                     }
-                    
-                    guard let lockerDoc = snapshot?.documents.first else {
-                        print("No available lockers found")
-                        return
+                    return
+                }
+                
+                guard let lockerDoc = snapshot?.documents.first else {
+                    DispatchQueue.main.async {
+                        errorMessage = "No available lockers found"
+                        showError = true
+                        isProcessing = false
                     }
-                    
-                    let lockerId = lockerDoc.documentID
-                    let lockerRef = db.collection("lockers").document(lockerId)
-                    
-                    // Create a batch to update both the locker and create the rental
-                    let batch = db.batch()
-                    
-                    // Update locker availability
-                    batch.updateData([
-                        "available": false,
-                        "status": "occupied",
-                        "currentRentalId": updatedRental.id,
-                        "updatedAt": Timestamp(date: Date())
-                    ], forDocument: lockerRef)
-                    
-                    // Create rental document
-                    let rentalData: [String: Any] = [
-                        "id": updatedRental.id,
-                        "userId": user.id,
-                        "lockerId": lockerId,
-                        "locationName": updatedRental.shopName,
-                        "size": updatedRental.size.rawValue,
-                        "status": "active",
-                        "startDate": Timestamp(date: Date()),
-                        "endDate": NSNull(),
-                        "totalPrice": NSNull(),
-                        "paymentId": NSNull(),
-                        "createdAt": Timestamp(date: Date()),
-                        "updatedAt": Timestamp(date: Date())
-                    ]
-                    
-                    batch.setData(rentalData, forDocument: rentalRef)
-                    
-                    // Update statistics
-                    let statsRef = db.collection("statistics").document("system_stats")
-                    batch.updateData([
-                        "locker_stats.available": FieldValue.increment(Int64(-1)),
-                        "locker_stats.occupied": FieldValue.increment(Int64(1)),
-                        "rental_stats.active_rentals": FieldValue.increment(Int64(1))
-                    ], forDocument: statsRef)
-                    
-                    // Commit the batch
-                    batch.commit { error in
+                    return
+                }
+                
+                let lockerId = lockerDoc.documentID
+                let lockerRef = db.collection("lockers").document(lockerId)
+                let rentalRef = db.collection("rentals").document(rentalId)
+                
+                // Create a batch to update both the locker and create the rental
+                let batch = db.batch()
+                
+                // Update locker availability
+                batch.updateData([
+                    "available": false,
+                    "status": "occupied",
+                    "currentRentalId": rentalId
+                ], forDocument: lockerRef)
+                
+                // Create rental document
+                let rentalData: [String: Any] = [
+                    "id": rentalId,
+                    "userId": user.id,
+                    "lockerId": lockerId,
+                    "locationName": rental.shopName,
+                    "size": rental.size.rawValue,
+                    "status": "active",
+                    "plan": [
+                        "tier": selectedTier.rawValue,
+                        "duration": selectedDuration.rawValue,
+                        "totalHours": selectedDuration == .hourly ? 1 : 24
+                    ] as [String: Any]
+                ]
+                
+                batch.setData(rentalData, forDocument: rentalRef)
+                
+                // Update statistics
+                let statsRef = db.collection("statistics").document("system_stats")
+                batch.updateData([
+                    "locker_stats.available": FieldValue.increment(Int64(-1)),
+                    "locker_stats.occupied": FieldValue.increment(Int64(1)),
+                    "rental_stats.active_rentals": FieldValue.increment(Int64(1))
+                ], forDocument: statsRef)
+                
+                // Commit the batch
+                batch.commit { error in
+                    DispatchQueue.main.async {
                         if let error = error {
-                            print("Error creating rental: \(error.localizedDescription)")
+                            errorMessage = "Error creating rental: \(error.localizedDescription)"
+                            showError = true
                         } else {
-                            print("Rental created successfully")
-                            
                             // Post notification to refresh the locker map
                             NotificationCenter.default.post(name: Notification.Name("RefreshLockerMap"), object: nil)
                             
                             // Show success view
                             showRentalSuccess = true
                         }
+                        isProcessing = false
                     }
                 }
-        } else {
-            print("No user logged in")
-        }
+            }
     }
 }
 

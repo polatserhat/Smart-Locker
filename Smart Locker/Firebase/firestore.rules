@@ -8,41 +8,36 @@ service cloud.firestore {
     }
     
     function isOwner(userId) {
-      return request.auth.uid == userId;
+      return isAuthenticated() && request.auth.uid == userId;
     }
     
-    // Locker rules
-    match /lockers/{lockerId} {
-      allow read: if isAuthenticated();
-      allow update: if isAuthenticated();
-      // Only allow creation and deletion through admin panel
-      allow create, delete: if false;
-    }
-    
-    // Rental rules
+    // Rentals collection rules
     match /rentals/{rentalId} {
-      allow read: if isAuthenticated() && (
-        isOwner(resource.data.userId) || 
-        request.auth.token.admin == true
-      );
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (
-        isOwner(resource.data.userId) || 
-        request.auth.token.admin == true
-      );
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() 
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == "active";
+      allow update: if isAuthenticated() 
+        && resource.data.userId == request.auth.uid;
       allow delete: if false;
     }
     
-    // Statistics rules
-    match /statistics/{statId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+    // Lockers collection rules
+    match /lockers/{lockerId} {
+      allow read: if true;
+      allow update: if isAuthenticated();
     }
     
-    // User rules
+    // Statistics collection rules
+    match /statistics/{document=**} {
+      allow read: if true;
+      allow update: if isAuthenticated();
+    }
+    
+    // Users collection rules
     match /users/{userId} {
-      allow read: if isAuthenticated() && isOwner(userId);
-      allow write: if isAuthenticated() && isOwner(userId);
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
     }
     
     // Reservation rules
