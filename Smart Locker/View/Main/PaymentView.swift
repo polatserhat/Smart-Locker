@@ -103,7 +103,7 @@ struct PaymentView: View {
                     .padding()
                     .background(AppColors.surface)
                     .cornerRadius(12)
-                    .shadow(color: AppColors.background.opacity(0.3), radius: 10)
+                    .shadow(color: Color.black.opacity(0.05), radius: 10)
                     
                     // Payment Methods
                     VStack(alignment: .leading, spacing: 16) {
@@ -120,7 +120,7 @@ struct PaymentView: View {
                     .padding()
                     .background(AppColors.surface)
                     .cornerRadius(12)
-                    .shadow(color: AppColors.background.opacity(0.3), radius: 10)
+                    .shadow(color: Color.black.opacity(0.05), radius: 10)
                     
                     // Credit Card Form
                     if selectedPaymentMethod?.name == "Credit/Debit Card" {
@@ -142,7 +142,7 @@ struct PaymentView: View {
                         .padding()
                         .background(AppColors.surface)
                         .cornerRadius(12)
-                        .shadow(color: AppColors.background.opacity(0.3), radius: 10)
+                        .shadow(color: Color.black.opacity(0.05), radius: 10)
                     }
                 }
                 .padding(.vertical)
@@ -155,7 +155,7 @@ struct PaymentView: View {
                 }) {
                     if isProcessing {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: AppColors.textPrimary))
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             .frame(height: 24)
                     } else {
                         HStack {
@@ -170,14 +170,14 @@ struct PaymentView: View {
                                     .font(.system(size: 16))
                             }
                         }
-                        .foregroundColor(AppColors.textPrimary)
+                        .foregroundColor(Color.white)
                     }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
                 .background(AppColors.primary)
                 .cornerRadius(16)
-                .shadow(color: AppColors.background.opacity(0.4), radius: 5)
+                .shadow(color: Color.black.opacity(0.2), radius: 5)
                 .disabled(isProcessing)
                 
                 Button(action: {
@@ -260,17 +260,16 @@ struct PaymentMethodRow: View {
                     .foregroundColor(AppColors.textPrimary)
                 Spacer()
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(isSelected ? AppColors.secondary : AppColors.textSecondary)
+                    .foregroundColor(isSelected ? AppColors.primary : AppColors.textSecondary)
             }
             .padding()
             .background(AppColors.surface)
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? AppColors.secondary : AppColors.textSecondary.opacity(0.3), lineWidth: 1)
+                    .stroke(isSelected ? AppColors.primary : AppColors.divider, lineWidth: 1)
             )
         }
-        .foregroundColor(.primary)
     }
 }
 
@@ -295,5 +294,4 @@ struct PaymentMethodRow: View {
         )
     )
     .environmentObject(AuthViewModel())
-    .preferredColorScheme(.dark)
 } 

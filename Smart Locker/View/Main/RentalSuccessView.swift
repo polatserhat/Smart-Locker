@@ -150,7 +150,7 @@ struct RentalSuccessView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 40)
         }
-        .background(AppColors.secondary)
+        .background(AppColors.background)
     }
 }
 

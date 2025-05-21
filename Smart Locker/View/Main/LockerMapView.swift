@@ -63,47 +63,76 @@ struct LockerMapView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            ZStack(alignment: .bottom) {
-                // Map
-                Map(coordinateRegion: $viewModel.region, annotationItems: viewModel.locations) { location in
-                    MapAnnotation(coordinate: location.coordinate) {
-                        Button {
+        ZStack {
+            // Map with annotations
+            Map(coordinateRegion: $viewModel.region, annotationItems: viewModel.locations) { location in
+                MapAnnotation(coordinate: location.coordinate) {
+                    VStack(spacing: 0) {
+                        Button(action: {
                             selectedLocation = location
-                        } label: {
-                            VStack(spacing: 0) {
+                            showingLockerDetails = true
+                        }) {
+                            ZStack {
+                                // Shadow circle underneath
+                                Circle()
+                                    .fill(Color.black.opacity(0.1))
+                                    .frame(width: 44, height: 44)
+                                    .offset(y: 1)
+                                
+                                // Main circular pin
+                                Circle()
+                                    .fill(AppColors.surface)
+                                    .frame(width: 42, height: 42)
+                                    .overlay(
+                                        Circle()
+                                            .strokeBorder(AppColors.secondary, lineWidth: 4)
+                                    )
+                                
+                                // Icon inside pin
                                 Image(systemName: "lock.fill")
                                     .font(.system(size: 20))
-                                    .foregroundColor(location == selectedLocation ? AppColors.secondary : AppColors.primary)
-                                    .padding(8)
-                                    .background(AppColors.surface)
-                                    .clipShape(Circle())
-                                    .shadow(color: AppColors.shadow, radius: 4, y: 2)
-                                
-                                if location == selectedLocation {
-                                    Rectangle()
-                                        .fill(AppColors.secondary)
-                                        .frame(width: 4, height: 8)
-                                }
+                                    .foregroundColor(AppColors.textPrimary)
                             }
+                        }
+                        
+                        // Label shown when tapped
+                        if selectedLocation?.id == location.id {
+                            Text("\(location.name)\n\(location.totalLockers) lockers")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(AppColors.textPrimary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(AppColors.surface)
+                                        .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+                                )
+                                .offset(y: 5)
+                                .transition(.opacity)
+                                .animation(.easeInOut(duration: 0.2), value: selectedLocation?.id == location.id)
                         }
                     }
                 }
-                .edgesIgnoringSafeArea(.all)
-                
-                // Search bar
+            }
+            .ignoresSafeArea()
+            
+            // Search box at the top
+            VStack {
                 VStack(spacing: 0) {
+                    // Header with back button and title
                     HStack {
-                        Button {
+                        Button(action: {
                             dismiss()
-                        } label: {
+                        }) {
                             Image(systemName: "arrow.left")
-                                .font(.system(size: 20, weight: .semibold))
+                                .font(.system(size: 18, weight: .medium))
                                 .foregroundColor(AppColors.textPrimary)
-                                .padding(10)
+                                .frame(width: 36, height: 36)
                                 .background(AppColors.surface)
                                 .clipShape(Circle())
-                                .shadow(color: AppColors.shadow, radius: 4, y: 2)
+                                .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 1)
                         }
                         
                         Spacer()
@@ -114,201 +143,274 @@ struct LockerMapView: View {
                         
                         Spacer()
                         
-                        Button {
-                            viewModel.requestLocationPermission()
-                        } label: {
-                            Image(systemName: "location.fill")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundColor(AppColors.textPrimary)
-                                .padding(10)
-                                .background(AppColors.surface)
-                                .clipShape(Circle())
-                                .shadow(color: AppColors.shadow, radius: 4, y: 2)
+                        Button(action: {
+                            // This is a placeholder UI element for visual balance
+                        }) {
+                            Color.clear
+                                .frame(width: 36, height: 36)
                         }
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
+                    .padding(.bottom, 8)
                     
+                    // Search bar (non-functional, just for design)
                     HStack {
                         Image(systemName: "magnifyingglass")
-                            .foregroundColor(AppColors.textSecondary)
+                            .foregroundColor(.gray)
                         
-                        TextField("Search locations", text: $viewModel.searchText)
-                            .foregroundColor(AppColors.textPrimary)
-                            .accentColor(AppColors.secondary)
+                        Text("Search for a location")
+                            .foregroundColor(.gray)
+                            .font(.subheadline)
                         
-                        if !viewModel.searchText.isEmpty {
-                            Button {
-                                viewModel.searchText = ""
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(AppColors.textSecondary)
-                            }
-                        }
+                        Spacer()
                     }
                     .padding(12)
-                    .background(AppColors.surface)
+                    .background(Color.white)
                     .cornerRadius(10)
                     .padding(.horizontal, 16)
-                    .padding(.top, 8)
                     .padding(.bottom, 16)
-                    .shadow(color: AppColors.shadow, radius: 4, y: 2)
                 }
-                .background(AppColors.background.opacity(0.7))
-                .frame(maxWidth: .infinity, alignment: .top)
-                
-                // Location Detail Card
-                if let location = selectedLocation {
-                    LocationDetailCard(
-                        location: location,
-                        onDismiss: { selectedLocation = nil },
-                        onSelect: {
-                            showingLockerDetails = true
-                        }
-                    )
-                    .padding(.bottom, 24)
-                    .transition(.move(edge: .bottom))
-                    .animation(.spring(), value: selectedLocation)
-                }
-            }
-            .navigationDestination(isPresented: $showingLockerDetails) {
-                if let location = selectedLocation {
-                    LockerSelectionView(
-                        location: location,
-                        rentalType: isReservationFlow ? .reservation : .instant,
-                        reservationDates: reservationDates
-                    )
-                    .environmentObject(AuthViewModel.shared ?? AuthViewModel())
-                }
-            }
-            .confirmationDialog(
-                "Get Directions",
-                isPresented: $showingDirectionsSheet,
-                titleVisibility: .visible
-            ) {
-                Button("Open in Apple Maps") {
-                    selectedLocation?.openInMaps()
-                }
-                
-                Button("Open in Google Maps") {
-                    selectedLocation?.openInGoogleMaps()
-                }
-                
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Choose your preferred navigation app")
-            }
-            .onAppear {
-                viewModel.fetchLockerLocations()
-                
-                if let userLocation = viewModel.userLocation {
-                    viewModel.region.center = userLocation
-                }
-                
-                print("LockerMapView appeared with rental type: \(isReservationFlow ? "Reservation" : "Instant"), reservation date: \(String(describing: reservationDates))")
-            }
-            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("RefreshLockerMap"))) { _ in
-                print("🔄 Refreshing locker map...")
-                viewModel.fetchLockerLocations()
-            }
-        }
-    }
-}
-
-struct LocationDetailCard: View {
-    let location: LockerLocation
-    let onDismiss: () -> Void
-    let onSelect: () -> Void
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Header with name and dismiss button
-            HStack {
-                Text(location.name)
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundColor(AppColors.textPrimary)
+                .background(Color.white)
+                .cornerRadius(16)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 2)
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
                 
                 Spacer()
                 
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(AppColors.textSecondary)
-                        .padding(8)
-                        .background(AppColors.surface)
-                        .clipShape(Circle())
-                }
-            }
-            
-            // Address
-            HStack {
-                Image(systemName: "mappin.and.ellipse")
-                    .foregroundColor(AppColors.textSecondary)
-                
-                Text(location.address)
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.textSecondary)
-            }
-            
-            Divider()
-                .background(AppColors.border)
-            
-            // Availability info
-            HStack(spacing: 24) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Available")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                    
-                    Text("Now")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(AppColors.secondary)
-                }
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Sizes")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                    
-                    Text("S, M, L")
-                        .font(.headline)
-                        .foregroundColor(AppColors.textPrimary)
-                }
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Starting at")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                    
-                    Text("$2.99/hr")
-                        .font(.headline)
-                        .foregroundColor(AppColors.textPrimary)
-                }
-            }
-            
-            // Select button
-            Button(action: onSelect) {
+                // Bottom status bar showing number of locations
                 HStack {
-                    Text("Select This Location")
-                        .fontWeight(.semibold)
-                        .foregroundColor(AppColors.textPrimary)
+                    Text("\(viewModel.locations.count) locations near you")
+                        .font(.footnote)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
                     
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 16, weight: .semibold))
+                    Spacer()
+                    
+                    Button(action: {
+                        // Center map on user location (placeholder)
+                    }) {
+                        Image(systemName: "location.fill")
+                            .foregroundColor(.white)
+                            .frame(width: 32, height: 32)
+                            .background(AppColors.secondary)
+                            .clipShape(Circle())
+                    }
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+                .padding(12)
                 .background(AppColors.primary)
                 .cornerRadius(12)
+                .padding(16)
+            }
+            
+            // Location Details Sheet
+            if showingLockerDetails {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        showingLockerDetails = false
+                    }
+                
+                VStack(spacing: 20) {
+                    // Header with handle line
+                    VStack(spacing: 16) {
+                        // Draggable handle
+                        RoundedRectangle(cornerRadius: 2.5)
+                            .fill(Color.gray.opacity(0.5))
+                            .frame(width: 40, height: 5)
+                        
+                        // Shop name and address
+                        VStack(spacing: 4) {
+                            HStack {
+                                Text(selectedLocation?.name ?? "")
+                                    .font(.title3)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(AppColors.textPrimary)
+                                
+                                Spacer()
+                                
+                                Button(action: {
+                                    showingDirectionsSheet = true
+                                }) {
+                                    Image(systemName: "arrow.triangle.turn.up.right.diamond.fill")
+                                        .font(.system(size: 22))
+                                        .foregroundColor(AppColors.secondary)
+                                }
+                            }
+                            
+                            HStack {
+                                Text(selectedLocation?.address ?? "")
+                                    .font(.subheadline)
+                                    .foregroundColor(AppColors.textSecondary)
+                                
+                                Spacer()
+                            }
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    // Locker Availability Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Available Lockers")
+                            .font(.headline)
+                            .foregroundColor(AppColors.textPrimary)
+                        
+                        HStack(spacing: 12) {
+                            // Small Lockers
+                            AvailabilityCard(
+                                size: "Small",
+                                locationId: selectedLocation?.id.uuidString ?? "",
+                                dimensions: "30 x 30 x 45 cm",
+                                availableCount: selectedLocation?.availableLockers["Small"] ?? 0
+                            )
+                            
+                            // Medium Lockers
+                            AvailabilityCard(
+                                size: "Medium",
+                                locationId: selectedLocation?.id.uuidString ?? "",
+                                dimensions: "45 x 45 x 60 cm",
+                                availableCount: selectedLocation?.availableLockers["Medium"] ?? 0
+                            )
+                            
+                            // Large Lockers
+                            AvailabilityCard(
+                                size: "Large",
+                                locationId: selectedLocation?.id.uuidString ?? "",
+                                dimensions: "60 x 60 x 90 cm",
+                                availableCount: selectedLocation?.availableLockers["Large"] ?? 0
+                            )
+                        }
+                    }
+                    
+                    // Amenities
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Amenities")
+                            .font(.headline)
+                            .foregroundColor(AppColors.textPrimary)
+                        
+                        HStack(spacing: 24) {
+                            // Opening hours
+                            VStack(spacing: 4) {
+                                Image(systemName: "clock.fill")
+                                    .foregroundColor(AppColors.secondary)
+                                    .font(.system(size: 20))
+                                
+                                Text("24/7")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(AppColors.textPrimary)
+                            }
+                            
+                            // Security
+                            VStack(spacing: 4) {
+                                Image(systemName: "shield.fill")
+                                    .foregroundColor(AppColors.secondary)
+                                    .font(.system(size: 20))
+                                
+                                Text("Secure")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(AppColors.textPrimary)
+                            }
+                            
+                            // Covered
+                            VStack(spacing: 4) {
+                                Image(systemName: "house.fill")
+                                    .foregroundColor(AppColors.secondary)
+                                    .font(.system(size: 20))
+                                
+                                Text("Indoor")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(AppColors.textPrimary)
+                            }
+                            
+                            // Accessibility
+                            VStack(spacing: 4) {
+                                Image(systemName: "figure.roll")
+                                    .foregroundColor(AppColors.secondary)
+                                    .font(.system(size: 20))
+                                
+                                Text("Accessible")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(AppColors.textPrimary)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    
+                    Spacer()
+                    
+                    // Select Locker Button
+                    Button(action: {
+                        if let location = selectedLocation {
+                            showingLockerDetails = false
+                            navigateToLockerSelection = true
+                        }
+                    }) {
+                        Text("Select This Location")
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(AppColors.primary)
+                                    .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+                            )
+                    }
+                }
+                .padding(24)
+                .background(
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(AppColors.surface)
+                )
+                .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
+                .transition(.move(edge: .bottom))
+                .animation(.spring(), value: showingLockerDetails)
+                .frame(maxHeight: 500)
+                .padding(.horizontal)
+                .padding(.bottom, -20)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
         }
-        .padding(16)
-        .background(AppColors.surface)
-        .cornerRadius(16)
-        .shadow(color: AppColors.shadow, radius: 8, y: 4)
-        .padding(.horizontal, 24)
+        .fullScreenCover(isPresented: $navigateToLockerSelection) {
+            if let location = selectedLocation {
+                LockerSelectionView(
+                    location: location,
+                    rentalType: isReservationFlow ? .reservation : .instant,
+                    reservationDates: reservationDates
+                )
+                .environmentObject(AuthViewModel.shared ?? AuthViewModel())
+            }
+        }
+        .confirmationDialog(
+            "Get Directions",
+            isPresented: $showingDirectionsSheet,
+            titleVisibility: .visible
+        ) {
+            Button("Open in Apple Maps") {
+                selectedLocation?.openInMaps()
+            }
+            
+            Button("Open in Google Maps") {
+                selectedLocation?.openInGoogleMaps()
+            }
+            
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Choose your preferred navigation app")
+        }
+        .onAppear {
+            viewModel.fetchLockerLocations()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("RefreshLockerMap"))) { _ in
+            print("🔄 Refreshing locker map...")
+            viewModel.fetchLockerLocations()
+        }
     }
 }
 
@@ -316,12 +418,9 @@ class LockerMapViewModel: ObservableObject {
     @Published var locations: [LockerLocation] = []
     @Published var region = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
-        span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
+        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
     )
-    @Published var searchText = ""
     private let db = Firestore.firestore()
-    private let locationManager = CLLocationManager()
-    @Published var userLocation: CLLocationCoordinate2D?
     
     func fetchLockerLocations() {
         print("🔍 Fetching locker locations...")
@@ -396,7 +495,7 @@ class LockerMapViewModel: ObservableObject {
                 if let firstLocation = self.locations.first {
                     self.region = MKCoordinateRegion(
                         center: firstLocation.coordinate,
-                        span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
+                        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
                     )
                 }
                 
@@ -407,15 +506,6 @@ class LockerMapViewModel: ObservableObject {
                     print("    Available: \(location.availableLockers)")
                 }
             }
-    }
-    
-    func requestLocationPermission() {
-        locationManager.requestWhenInUseAuthorization()
-        locationManager.startUpdatingLocation()
-        
-        if let location = locationManager.location?.coordinate {
-            userLocation = location
-        }
     }
 }
 
@@ -435,7 +525,7 @@ struct AvailabilityCard: View {
             
             Text("\(availableCount)")
                 .font(.system(size: 22, weight: .bold))
-                .foregroundColor(AppColors.primary)
+                .foregroundColor(AppColors.textPrimary)
             
             Text(dimensions)
                 .font(.caption2)
@@ -447,12 +537,12 @@ struct AvailabilityCard: View {
             Text(availableCount > 0 ? "Available" : "Full")
                 .font(.system(size: 10))
                 .fontWeight(.semibold)
-                .foregroundColor(AppColors.textPrimary)
+                .foregroundColor(.white)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 4)
                 .background(
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(availableCount > 0 ? AppColors.secondary : Color.red)
+                        .fill(availableCount > 0 ? Color.green : Color.red)
                 )
         }
         .padding(.vertical, 12)
@@ -460,10 +550,10 @@ struct AvailabilityCard: View {
         .frame(maxWidth: .infinity)
         .background(AppColors.surface)
         .cornerRadius(12)
-        .shadow(color: AppColors.shadow, radius: 5, y: 2)
+        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(AppColors.border, lineWidth: 1)
+                .stroke(AppColors.divider, lineWidth: 1)
         )
     }
 }
@@ -471,7 +561,6 @@ struct AvailabilityCard: View {
 #Preview {
     NavigationView {
         LockerMapView()
-            .preferredColorScheme(.dark)
     }
 }
 

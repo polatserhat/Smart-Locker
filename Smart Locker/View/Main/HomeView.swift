@@ -102,59 +102,38 @@ struct HomeView: View {
         stopTimer()
         
         // Create a LockerRental object from the active rental
-        selectedRental = LockerRental(
+        let lockerRental = LockerRental(
             id: activeRental.id,
             shopName: activeRental.locationName,
             size: LockerSize(rawValue: activeRental.size) ?? .medium,
             rentalType: .instant,
             startTime: activeRental.startDate,
-            status: .active  // Mark as active to indicate this is an ending rental
+            endTime: Date(),
+            status: .active,
+            totalPrice: calculateFinalPrice(startTime: activeRental.startDate, endTime: Date(), basePrice: activeRental.size == "Small" ? 0.10 : (activeRental.size == "Medium" ? 0.15 : 0.20))
         )
         
         // Create a LockerLocation object
-        selectedLocation = LockerLocation(
+        let lockerLocation = LockerLocation(
             name: activeRental.locationName,
-            coordinate: CLLocationCoordinate2D(latitude: 0, longitude: 0), // These will be updated from Firestore
+            coordinate: CLLocationCoordinate2D(
+                latitude: 37.7749, // Default to San Francisco if coordinates not available
+                longitude: -122.4194
+            ),
             address: activeRental.locationName
         )
         
-        // Calculate final price
-        let endTime = Date()
-        let startTime = activeRental.startDate
+        // Set the selected rental and location
+        self.selectedRental = lockerRental
+        self.selectedLocation = lockerLocation
+        
+        // Show payment view
+        self.showPayment = true
+    }
+    
+    private func calculateFinalPrice(startTime: Date, endTime: Date, basePrice: Double) -> Double {
         let totalHours = calculateTotalHours(from: startTime, to: endTime)
-        
-        print("🔴 Calculated total hours: \(totalHours)")
-        
-        // Get pricing from the locker document
-        let db = Firestore.firestore()
-        db.collection("lockers")
-            .document(activeRental.lockerId)
-            .getDocument { snapshot, error in
-                if let error = error {
-                    print("🔴 Error fetching locker: \(error.localizedDescription)")
-                    return
-                }
-                
-                guard let data = snapshot?.data(),
-                      let pricing = data["pricing"] as? [String: Any],
-                      let standardPricing = pricing["standard"] as? [String: Any],
-                      let hourlyRate = standardPricing["hourly"] as? Double else {
-                    print("🔴 Error getting pricing data")
-                    return
-                }
-                
-                self.calculatedAmount = max(hourlyRate * totalHours, hourlyRate) // Minimum of 1 hour
-                print("🔴 Calculated amount: \(self.calculatedAmount)")
-                
-                // Update the rental object with the calculated price
-                if var updatedRental = self.selectedRental {
-                    updatedRental.totalPrice = self.calculatedAmount
-                    self.selectedRental = updatedRental
-                    
-                    // Show payment view first
-                    self.showPayment = true
-                }
-            }
+        return max(basePrice * totalHours, basePrice) // Minimum of 1 hour
     }
     
     private func fetchLockerPricing(db: Firestore, lockerId: String, activeRental: Rental, endTime: Date, totalHours: Double) {
@@ -582,8 +561,15 @@ struct HomeView: View {
                     selectedRental = nil
                     selectedLocation = nil
                     
-                    // Refresh the rentals list
+                    // Stop the timer when the rental is completed
+                    stopTimer()
+                    elapsedTime = 0
+                    
+                    // Force refresh the rentals list to clear completed rentals
                     if let userId = authViewModel.currentUser?.id {
+                        // Clear the current rentals immediately to remove the timer display
+                        reservationViewModel.currentRentals = []
+                        // Then fetch updated data from Firebase
                         reservationViewModel.fetchRentals(for: userId)
                     }
                 }

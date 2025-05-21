@@ -36,7 +36,7 @@ struct ReservationDateSelectionView: View {
                 }) {
                     Image(systemName: "arrow.left")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(AppColors.primary)
+                        .foregroundColor(AppColors.textPrimary)
                 }
                 
                 Spacer()
@@ -44,6 +44,7 @@ struct ReservationDateSelectionView: View {
                 Text("Select Dates")
                     .font(.title3)
                     .fontWeight(.bold)
+                    .foregroundColor(AppColors.textPrimary)
                 
                 Spacer()
             }
@@ -53,7 +54,7 @@ struct ReservationDateSelectionView: View {
             HStack {
                 Button(action: previousMonth) {
                     Image(systemName: "chevron.left")
-                        .foregroundColor(isPreviousMonthAvailable ? AppColors.primary : Color.gray)
+                        .foregroundColor(isPreviousMonthAvailable ? AppColors.textPrimary : Color.gray)
                 }
                 .disabled(!isPreviousMonthAvailable)
                 
@@ -61,12 +62,13 @@ struct ReservationDateSelectionView: View {
                 
                 Text(currentMonth, formatter: DateFormatter.monthYear)
                     .font(.headline)
+                    .foregroundColor(AppColors.textPrimary)
                 
                 Spacer()
                 
                 Button(action: nextMonth) {
                     Image(systemName: "chevron.right")
-                        .foregroundColor(AppColors.primary)
+                        .foregroundColor(AppColors.textPrimary)
                 }
             }
             .padding(.horizontal)
@@ -76,7 +78,7 @@ struct ReservationDateSelectionView: View {
                 ForEach(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], id: \.self) { day in
                     Text(day)
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
                         .frame(maxWidth: .infinity)
                 }
                 
@@ -99,14 +101,14 @@ struct ReservationDateSelectionView: View {
                                 .background(selectedDates.contains(date) ? AppColors.secondary : Color.clear)
                                 .foregroundColor(
                                     isDateInPast(date) 
-                                    ? .gray.opacity(0.5) 
-                                    : (selectedDates.contains(date) ? .white : .primary)
+                                    ? AppColors.textSecondary.opacity(0.5) 
+                                    : (selectedDates.contains(date) ? Color.white : AppColors.textPrimary)
                                 )
                                 .cornerRadius(8)
                                 .overlay(
                                     isDateInPast(date) ?
                                     RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                        .stroke(AppColors.textSecondary.opacity(0.3), lineWidth: 1)
                                     : nil
                                 )
                         }
@@ -115,7 +117,7 @@ struct ReservationDateSelectionView: View {
                         Text(dateFormatter.string(from: date))
                             .font(.system(.body, design: .rounded))
                             .frame(maxWidth: .infinity, minHeight: 40)
-                            .foregroundColor(.gray.opacity(0.5))
+                            .foregroundColor(AppColors.textSecondary.opacity(0.5))
                     }
                 }
             }
@@ -143,7 +145,7 @@ struct ReservationDateSelectionView: View {
                     }
                 }
                 .padding()
-                .background(Color.white)
+                .background(AppColors.surface)
                 .cornerRadius(12)
                 .shadow(color: Color.black.opacity(0.05), radius: 10)
             }
@@ -154,7 +156,7 @@ struct ReservationDateSelectionView: View {
             }) {
                 Text("Confirm Dates")
                     .fontWeight(.semibold)
-                    .foregroundColor(.white)
+                    .foregroundColor(Color.white)
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(
@@ -168,7 +170,7 @@ struct ReservationDateSelectionView: View {
             .padding(.bottom, 30)
         }
         .padding(.horizontal, 24)
-        .background(Color(UIColor.systemBackground))
+        .background(AppColors.background)
         .fullScreenCover(isPresented: $showLocationSelection) {
             LockerMapView(reservationDates: selectedDates)
                 .environmentObject(AuthViewModel.shared ?? AuthViewModel())

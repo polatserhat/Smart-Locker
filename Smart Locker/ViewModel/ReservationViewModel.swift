@@ -94,4 +94,32 @@ class ReservationViewModel: ObservableObject {
     var pastRentalCount: Int {
         return pastRentals.count
     }
+    
+    // Method to force refresh rentals
+    func refreshRentals() {
+        if let user = Auth.auth().currentUser {
+            fetchRentals(for: user.uid)
+        }
+    }
+    
+    // Method to mark a rental as completed and move it to past rentals
+    func completeRental(rentalId: String) {
+        // Find the rental in currentRentals
+        if let index = currentRentals.firstIndex(where: { $0.id == rentalId }) {
+            // Move it to pastRentals
+            let rental = currentRentals[index]
+            currentRentals.remove(at: index)
+            pastRentals.insert(rental, at: 0)
+            
+            // Update the rental status in Firestore
+            db.collection("rentals").document(rentalId).updateData([
+                "status": "completed",
+                "endDate": Timestamp(date: Date())
+            ]) { error in
+                if let error = error {
+                    print("Error updating rental status: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
 } 

@@ -12,32 +12,38 @@ struct LockerSizeCard: View {
                 Image(systemName: size == .small ? "briefcase.fill" : 
                                 (size == .medium ? "cube.box.fill" : "shippingbox.fill"))
                     .font(.system(size: 24))
-                    .foregroundColor(isSelected ? AppColors.secondary : Color.gray)
+                    .foregroundColor(isSelected ? AppColors.secondary : AppColors.textSecondary)
                     .frame(height: 36)
                 
                 // Size name
                 Text(size.rawValue)
                     .font(.headline)
-                    .foregroundColor(isSelected ? AppColors.primary : .gray)
+                    .foregroundColor(AppColors.textPrimary)
                 
                 // Dimensions
                 Text(size.dimensions)
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(AppColors.textSecondary)
                 
                 // Price
                 Text("$\(String(format: "%.2f", size.basePrice))")
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(isSelected ? AppColors.secondary : AppColors.primary)
+                    .foregroundColor(Color.white)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .background(
+                        Capsule()
+                            .fill(isSelected ? AppColors.secondary : AppColors.primary)
+                    )
                     .padding(.top, 6)
             }
             .padding(.vertical, 20)
             .frame(maxWidth: .infinity)
-            .background(Color.white)
+            .background(AppColors.surface)
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? AppColors.secondary : Color.gray.opacity(0.3), lineWidth: 1)
+                    .stroke(isSelected ? AppColors.secondary : AppColors.divider, lineWidth: 1)
             )
             .shadow(color: isSelected ? AppColors.secondary.opacity(0.3) : Color.black.opacity(0.05), 
                     radius: isSelected ? 8 : 4)
@@ -74,7 +80,7 @@ struct LockerSelectionView: View {
                     }) {
                         Image(systemName: "arrow.left")
                             .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(.black)
+                            .foregroundColor(AppColors.textPrimary)
                     }
                     
                     Spacer()
@@ -94,18 +100,18 @@ struct LockerSelectionView: View {
                     // Shop name & location
                     HStack {
                         Image(systemName: "mappin.circle.fill")
-                            .foregroundColor(AppColors.secondary)
+                            .foregroundColor(AppColors.textPrimary)
                             .font(.system(size: 20))
                         
                         Text(location.name)
                             .font(.title3)
                             .fontWeight(.bold)
-                            .foregroundColor(.black)
+                            .foregroundColor(AppColors.textPrimary)
                     }
                     
                     Text(location.address)
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
                         .multilineTextAlignment(.center)
                 }
                 
@@ -116,16 +122,16 @@ struct LockerSelectionView: View {
                         .fontWeight(.medium)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(rentalType == .instant ? AppColors.secondary.opacity(0.2) : Color.blue.opacity(0.2))
-                        .foregroundColor(rentalType == .instant ? AppColors.primary : Color.blue)
+                        .background(rentalType == .instant ? AppColors.secondary.opacity(0.8) : Color.blue.opacity(0.2))
+                        .foregroundColor(rentalType == .instant ? Color.white : Color.blue)
                         .cornerRadius(12)
                     
                     Text("Step 1 of 2")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color.gray.opacity(0.1))
+                        .background(AppColors.surface)
                         .cornerRadius(12)
                 }
             }
@@ -134,7 +140,7 @@ struct LockerSelectionView: View {
             
             // Divider
             Rectangle()
-                .fill(Color.gray.opacity(0.1))
+                .fill(AppColors.divider)
                 .frame(height: 8)
             
             // Content - Locker Selection
@@ -144,12 +150,13 @@ struct LockerSelectionView: View {
                     HStack {
                         Text("Available Sizes")
                             .font(.headline)
+                            .foregroundColor(AppColors.textPrimary)
                         
                         Spacer()
                         
                         Text("30 lockers of each size available")
                             .font(.caption)
-                            .foregroundColor(.gray)
+                            .foregroundColor(AppColors.textSecondary)
                     }
                     .padding(.top, 24)
                     
@@ -172,7 +179,7 @@ struct LockerSelectionView: View {
                     if showSizeSelectionHint {
                         Text("Please select a locker size to continue")
                             .font(.subheadline)
-                            .foregroundColor(.red)
+                            .foregroundColor(AppColors.error)
                             .padding(.vertical, 10)
                     }
                     
@@ -204,7 +211,7 @@ struct LockerSelectionView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(selectedSize != nil ? AppColors.primary : Color.gray)
-                    .foregroundColor(.white)
+                    .foregroundColor(Color.white)
                     .cornerRadius(12)
                 }
                 .disabled(selectedSize == nil)
@@ -212,12 +219,12 @@ struct LockerSelectionView: View {
             .padding()
             .background(
                 Rectangle()
-                    .fill(Color.white)
+                    .fill(AppColors.surface)
                     .shadow(color: Color.black.opacity(0.05), radius: 8, y: -4)
             )
         }
         .edgesIgnoringSafeArea(.bottom)
-        .background(Color(UIColor.systemBackground))
+        .background(AppColors.background)
         .fullScreenCover(isPresented: $showPlanSelection) {
             if let size = selectedSize {
                 PlanSelectionView(

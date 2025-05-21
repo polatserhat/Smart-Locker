@@ -175,7 +175,7 @@ Validate payments before unlocking.
 
 7. **PaymentView.swift**:
    - User completes the payment.
-   - Process is over.
+   - Process is over.Timer is stopped in HomeView(Active rental secction)
 
 ### Reservation Flow
 
