@@ -9,18 +9,21 @@ struct InputField: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.caption)
-                .foregroundColor(.gray)
+                .fontWeight(.semibold)
+                .foregroundColor(AppColors.textSecondary)
             
             if isSecure {
                 SecureField("", text: $text)
                     .padding()
-                    .background(Color(UIColor.systemGray6))
-                    .cornerRadius(8)
+                    .background(AppColors.surface)
+                    .cornerRadius(10)
+                    .foregroundColor(AppColors.textPrimary)
             } else {
                 TextField("", text: $text)
                     .padding()
-                    .background(Color(UIColor.systemGray6))
-                    .cornerRadius(8)
+                    .background(AppColors.surface)
+                    .cornerRadius(10)
+                    .foregroundColor(AppColors.textPrimary)
             }
         }
     }
@@ -30,8 +33,9 @@ struct CustomTextFieldStyle: TextFieldStyle {
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration
             .padding()
-            .background(Color(UIColor.systemGray6))
-            .cornerRadius(8)
+            .background(AppColors.surface)
+            .cornerRadius(10)
+            .foregroundColor(AppColors.textPrimary)
     }
 }
 
@@ -41,4 +45,6 @@ struct CustomTextFieldStyle: TextFieldStyle {
         InputField(title: "PASSWORD", text: .constant(""), isSecure: true)
     }
     .padding()
+    .background(AppColors.background)
+    .preferredColorScheme(.dark)
 } 

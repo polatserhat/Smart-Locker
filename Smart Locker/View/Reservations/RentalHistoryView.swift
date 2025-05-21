@@ -13,7 +13,7 @@ struct RentalHistoryView: View {
                     dismiss()
                 }) {
                     Image(systemName: "arrow.left")
-                        .foregroundColor(AppColors.primaryBlack)
+                        .foregroundColor(AppColors.primary)
                         .imageScale(.large)
                 }
                 
@@ -32,6 +32,7 @@ struct RentalHistoryView: View {
             }
             .padding(.horizontal)
             .padding(.vertical, 16)
+            .background(AppColors.primary)
             
             if reservationViewModel.isLoading {
                 Spacer()
@@ -43,7 +44,7 @@ struct RentalHistoryView: View {
                 VStack(spacing: 16) {
                     Image(systemName: "clock.arrow.circlepath")
                         .font(.system(size: 70))
-                        .foregroundColor(AppColors.primaryYellow)
+                        .foregroundColor(AppColors.secondary)
                     
                     Text("No Rental History")
                         .font(.title3)
@@ -121,7 +122,7 @@ struct RentalDetailRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
-                .foregroundColor(AppColors.primaryBlack)
+                .foregroundColor(AppColors.primary)
                 .frame(width: 20)
             
             Text(title)

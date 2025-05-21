@@ -2,14 +2,32 @@ import SwiftUI
 import UIKit
 
 struct AppColors {
-    static let primaryYellow = Color("PrimaryYellow", bundle: nil)
-    static let primaryBlack = Color.black
-    static let secondaryGray = Color(UIColor.systemGray6)
+    // Main colors
+    static let primary = Color("DarkPrimary") // Dark background
+    static let secondary = Color("DarkAccent") // Accent color
+    static let background = Color("DarkBackground") // Even darker background
     
-    // Additional colors can be added here as needed
+    // Text colors
+    static let textPrimary = Color("TextPrimary") // Light text
+    static let textSecondary = Color("TextSecondary") // Dimmed text
+    
+    // UI elements
+    static let surface = Color("Surface") // Slightly lighter than background for cards
+    static let surfaceSecondary = Color("SurfaceSecondary") // Alternative surface color
+    static let divider = Color("Divider") // Color for dividers
+    
+    // Semantic colors
+    static let success = Color("Success") // Green for success states
+    static let error = Color("Error") // Red for errors
+    static let warning = Color("Warning") // Yellow for warnings
+    
+    // Helper function to get color value
+    static func getColor(_ name: String) -> Color {
+        return Color(name)
+    }
 }
 
 // Usage example:
 // Text("Hello")
-//     .foregroundColor(AppColors.primaryYellow)
-//     .background(AppColors.primaryBlack) 
+//     .foregroundColor(AppColors.primary)
+//     .background(AppColors.background) 

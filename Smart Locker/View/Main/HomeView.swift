@@ -18,12 +18,12 @@ struct CategoryButton: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
             }
-            .foregroundColor(isSelected ? .white : .black)
+            .foregroundColor(isSelected ? AppColors.textPrimary : AppColors.textSecondary)
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
             .background(
                 Capsule()
-                    .fill(isSelected ? AppColors.primaryYellow : Color.gray)
+                    .fill(isSelected ? AppColors.secondary : AppColors.surface)
             )
         }
     }
@@ -292,14 +292,14 @@ struct HomeView: View {
                                 .scaledToFill()
                                 .frame(width: 48, height: 48)
                                 .clipShape(Circle())
-                                .overlay(Circle().stroke(Color.gray.opacity(0.2), lineWidth: 1))
+                                .overlay(Circle().stroke(AppColors.secondary.opacity(0.5), lineWidth: 1))
                         } else {
                             Image("profile_placeholder")
                                 .resizable()
                                 .scaledToFill()
                                 .frame(width: 48, height: 48)
                                 .clipShape(Circle())
-                                .overlay(Circle().stroke(Color.gray.opacity(0.2), lineWidth: 1))
+                                .overlay(Circle().stroke(AppColors.secondary.opacity(0.5), lineWidth: 1))
                         }
                     }
                     
@@ -316,15 +316,14 @@ struct HomeView: View {
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                         }
-                        .foregroundColor(AppColors.primaryBlack)
+                        .foregroundColor(AppColors.textPrimary)
                         .padding(.vertical, 8)
                         .padding(.horizontal, 12)
-                        .background(Color.white)
+                        .background(AppColors.surface)
                         .cornerRadius(8)
-                        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
-                                .stroke(AppColors.primaryYellow, lineWidth: 1)
+                                .stroke(AppColors.secondary, lineWidth: 1)
                         )
                     }
                 }
@@ -335,14 +334,15 @@ struct HomeView: View {
                 VStack(spacing: 8) {
                     Text("Hello, \(authViewModel.currentUser?.name ?? "User")")
                         .font(.title3)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
                     
                     VStack(spacing: 0) {
                         Text("Smart")
                             .font(.system(size: 44, weight: .bold))
+                            .foregroundColor(AppColors.textPrimary)
                         Text("Locker")
                             .font(.system(size: 44, weight: .black))
-                            .foregroundColor(AppColors.primaryYellow)
+                            .foregroundColor(AppColors.secondary)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -354,7 +354,7 @@ struct HomeView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Active Rental")
                             .font(.headline)
-                            .foregroundColor(.gray)
+                            .foregroundColor(AppColors.textSecondary)
                         
                         if let activeRental = reservationViewModel.currentRentals.first {
                             VStack(spacing: 16) {
@@ -363,9 +363,10 @@ struct HomeView: View {
                                         Text(activeRental.locationName)
                                             .font(.title3)
                                             .fontWeight(.medium)
+                                            .foregroundColor(AppColors.textPrimary)
                                         Text("\(activeRental.size) Locker")
                                             .font(.subheadline)
-                                            .foregroundColor(.gray)
+                                            .foregroundColor(AppColors.textSecondary)
                                     }
                                     
                                     Spacer()
@@ -373,7 +374,7 @@ struct HomeView: View {
                                     // Timer display
                                     Text(formatElapsedTime(elapsedTime))
                                         .font(.system(size: 16, weight: .medium))
-                                        .foregroundColor(AppColors.primaryYellow)
+                                        .foregroundColor(AppColors.secondary)
                                         .monospacedDigit()
                                 }
                                 .onAppear {
@@ -390,39 +391,40 @@ struct HomeView: View {
                                     }) {
                                         Text("End Rental")
                                             .font(.headline)
-                                            .foregroundColor(.white)
+                                            .foregroundColor(AppColors.textPrimary)
                                             .frame(maxWidth: .infinity)
                                             .padding()
-                                            .background(Color.red)
+                                            .background(AppColors.error)
                                             .cornerRadius(10)
                                     }
                                 }
                             }
                             .padding()
-                            .background(Color.white)
+                            .background(AppColors.surface)
                             .cornerRadius(12)
-                            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+                            .shadow(color: AppColors.background.opacity(0.5), radius: 8, x: 0, y: 4)
                         } else {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("No active rental")
                                         .font(.title3)
                                         .fontWeight(.medium)
+                                        .foregroundColor(AppColors.textPrimary)
                                     Text("Your locker rentals will appear here")
                                         .font(.subheadline)
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(AppColors.textSecondary)
                                 }
                                 
                                 Spacer()
                                 
                                 Image(systemName: "arrow.right.circle.fill")
                                     .font(.system(size: 24))
-                                    .foregroundColor(AppColors.primaryYellow)
+                                    .foregroundColor(AppColors.secondary)
                             }
                             .padding()
-                            .background(Color.white)
+                            .background(AppColors.surface)
                             .cornerRadius(12)
-                            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+                            .shadow(color: AppColors.background.opacity(0.5), radius: 8, x: 0, y: 4)
                         }
                     }
                     
@@ -433,29 +435,29 @@ struct HomeView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Past Rentals")
                                 .font(.headline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(AppColors.textSecondary)
                             
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("View History")
                                         .font(.title3)
                                         .fontWeight(.medium)
-                                        .foregroundColor(.primary)
+                                        .foregroundColor(AppColors.textPrimary)
                                     Text("Check your rental history")
                                         .font(.subheadline)
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(AppColors.textSecondary)
                                 }
                                 
                                 Spacer()
                                 
                                 Image(systemName: "clock.arrow.circlepath")
                                     .font(.system(size: 24))
-                                    .foregroundColor(AppColors.primaryYellow)
+                                    .foregroundColor(AppColors.secondary)
                             }
                             .padding()
-                            .background(Color.white)
+                            .background(AppColors.surface)
                             .cornerRadius(12)
-                            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+                            .shadow(color: AppColors.background.opacity(0.5), radius: 8, x: 0, y: 4)
                         }
                     }
                     
@@ -471,12 +473,12 @@ struct HomeView: View {
                                 Image(systemName: "hand.tap.fill")
                                     .font(.system(size: 20))
                             }
-                            .foregroundColor(AppColors.primaryBlack)
+                            .foregroundColor(AppColors.textPrimary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(AppColors.primaryYellow)
+                            .background(AppColors.secondary)
                             .cornerRadius(16)
-                            .shadow(color: AppColors.primaryYellow.opacity(0.3), radius: 10, x: 0, y: 5)
+                            .shadow(color: AppColors.secondary.opacity(0.3), radius: 10, x: 0, y: 5)
                         }
                         
                         // Reservation Button
@@ -489,12 +491,12 @@ struct HomeView: View {
                                 Image(systemName: "calendar.badge.plus")
                                     .font(.system(size: 20))
                             }
-                            .foregroundColor(.white)
+                            .foregroundColor(AppColors.textPrimary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(AppColors.primaryBlack)
+                            .background(AppColors.surfaceSecondary)
                             .cornerRadius(16)
-                            .shadow(color: AppColors.primaryBlack.opacity(0.2), radius: 10, x: 0, y: 5)
+                            .shadow(color: AppColors.primary.opacity(0.2), radius: 10, x: 0, y: 5)
                         }
                     }
                 }
@@ -502,7 +504,7 @@ struct HomeView: View {
                 Spacer(minLength: 20)
             }
             .padding(.horizontal, 24)
-            .background(Color(UIColor.systemBackground))
+            .background(AppColors.background)
             .navigationBarHidden(true)
             .fullScreenCover(isPresented: $showLockerMap) {
                 LockerMapView()
@@ -527,7 +529,7 @@ struct HomeView: View {
                     } else {
                         Text("Error loading payment view")
                             .padding()
-                            .background(Color.red.opacity(0.1))
+                            .background(AppColors.error.opacity(0.1))
                             .cornerRadius(8)
                     }
                 }
@@ -587,6 +589,7 @@ struct HomeView: View {
                 }
             }
         }
+        .preferredColorScheme(.dark)
     }
 }
 
@@ -595,5 +598,6 @@ struct HomeView_Previews: PreviewProvider {
         HomeView()
             .environmentObject(AuthViewModel())
             .environmentObject(ReservationViewModel())
+            .preferredColorScheme(.dark)
     }
 }

@@ -36,7 +36,7 @@ struct ReservationDateSelectionView: View {
                 }) {
                     Image(systemName: "arrow.left")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(AppColors.primaryBlack)
+                        .foregroundColor(AppColors.primary)
                 }
                 
                 Spacer()
@@ -53,7 +53,7 @@ struct ReservationDateSelectionView: View {
             HStack {
                 Button(action: previousMonth) {
                     Image(systemName: "chevron.left")
-                        .foregroundColor(isPreviousMonthAvailable ? AppColors.primaryBlack : Color.gray)
+                        .foregroundColor(isPreviousMonthAvailable ? AppColors.primary : Color.gray)
                 }
                 .disabled(!isPreviousMonthAvailable)
                 
@@ -66,7 +66,7 @@ struct ReservationDateSelectionView: View {
                 
                 Button(action: nextMonth) {
                     Image(systemName: "chevron.right")
-                        .foregroundColor(AppColors.primaryBlack)
+                        .foregroundColor(AppColors.primary)
                 }
             }
             .padding(.horizontal)
@@ -96,7 +96,7 @@ struct ReservationDateSelectionView: View {
                         }) {
                             Text(dateFormatter.string(from: date))
                                 .frame(maxWidth: .infinity, minHeight: 40)
-                                .background(selectedDates.contains(date) ? AppColors.primaryYellow : Color.clear)
+                                .background(selectedDates.contains(date) ? AppColors.secondary : Color.clear)
                                 .foregroundColor(
                                     isDateInPast(date) 
                                     ? .gray.opacity(0.5) 
@@ -136,7 +136,7 @@ struct ReservationDateSelectionView: View {
                                     .font(.subheadline)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 6)
-                                    .background(AppColors.primaryYellow.opacity(0.2))
+                                    .background(AppColors.secondary.opacity(0.2))
                                     .cornerRadius(8)
                             }
                         }
@@ -160,7 +160,7 @@ struct ReservationDateSelectionView: View {
                     .background(
                         selectedDates.isEmpty
                         ? Color.gray
-                        : AppColors.primaryBlack
+                        : AppColors.primary
                     )
                     .cornerRadius(12)
             }

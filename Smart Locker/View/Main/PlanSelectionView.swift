@@ -31,14 +31,14 @@ struct PlanSelectionView: View {
     private var tierBackgroundColor: (PlanTier) -> Color {
         { tier in
             selectedTier == tier
-            ? (tier == .premium ? AppColors.primaryYellow : Color.blue)
-            : Color.white
+            ? (tier == .premium ? AppColors.secondary : Color.blue)
+            : AppColors.surface
         }
     }
     
     private var tierTextColor: (PlanTier) -> Color {
         { tier in
-            selectedTier == tier ? .white : .primary
+            selectedTier == tier ? AppColors.textPrimary : AppColors.textPrimary
         }
     }
     
@@ -46,15 +46,15 @@ struct PlanSelectionView: View {
         { tier in
             selectedTier == tier
             ? Color.clear
-            : (tier == .premium ? AppColors.primaryYellow : Color.blue).opacity(0.3)
+            : (tier == .premium ? AppColors.secondary : Color.blue).opacity(0.3)
         }
     }
     
     private var durationBorderColor: (PlanDuration) -> Color {
         { duration in
             selectedDuration == duration
-            ? (selectedTier == .premium ? AppColors.primaryYellow : Color.blue)
-            : Color.gray.opacity(0.2)
+            ? (selectedTier == .premium ? AppColors.secondary : Color.blue)
+            : AppColors.textSecondary.opacity(0.2)
         }
     }
     
@@ -102,7 +102,7 @@ struct PlanSelectionView: View {
             
             // Divider
             Rectangle()
-                .fill(Color.gray.opacity(0.1))
+                .fill(AppColors.divider)
                 .frame(height: 8)
             
             // Content
@@ -126,7 +126,7 @@ struct PlanSelectionView: View {
                     if showPlanRequiredHint {
                         Text("Please select both a plan tier and duration to continue")
                             .font(.subheadline)
-                            .foregroundColor(.red)
+                            .foregroundColor(AppColors.error)
                             .padding(.vertical, 10)
                     }
                     
@@ -140,7 +140,7 @@ struct PlanSelectionView: View {
             }
         }
         .edgesIgnoringSafeArea(.bottom)
-        .background(Color(UIColor.systemBackground))
+        .background(AppColors.background)
         .fullScreenCover(isPresented: $showRentalSuccess) {
             RentalSuccessView(
                 isCompletingRental: false,
@@ -168,7 +168,7 @@ struct PlanSelectionView: View {
                 }) {
                     Image(systemName: "arrow.left")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.black)
+                        .foregroundColor(AppColors.textPrimary)
                 }
                 
                 Spacer()
@@ -176,6 +176,7 @@ struct PlanSelectionView: View {
                 Text(navigationTitle)
                     .font(.headline)
                     .fontWeight(.bold)
+                    .foregroundColor(AppColors.textPrimary)
                 
                 Spacer()
                 
@@ -192,6 +193,7 @@ struct PlanSelectionView: View {
         }
         .padding(.horizontal)
         .padding(.bottom, 12)
+        .background(AppColors.surface)
     }
     
     private var lockerInfoSummary: some View {
@@ -199,22 +201,24 @@ struct PlanSelectionView: View {
             Text(rental.shopName)
                 .font(.title3)
                 .fontWeight(.bold)
+                .foregroundColor(AppColors.textPrimary)
             
             HStack(spacing: 12) {
                 Text("\(rental.size.rawValue) Locker")
                     .font(.caption)
                     .fontWeight(.medium)
+                    .foregroundColor(AppColors.textPrimary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(AppColors.primaryYellow.opacity(0.2))
+                    .background(AppColors.secondary.opacity(0.2))
                     .cornerRadius(12)
                 
                 Text("Step 2 of 2")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(AppColors.textPrimary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Color.gray.opacity(0.1))
+                    .background(AppColors.textSecondary.opacity(0.2))
                     .cornerRadius(12)
             }
         }
@@ -224,6 +228,7 @@ struct PlanSelectionView: View {
         VStack(spacing: 16) {
             Text("Select Plan Tier")
                 .font(.headline)
+                .foregroundColor(AppColors.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             HStack(spacing: 12) {
@@ -249,13 +254,13 @@ struct PlanSelectionView: View {
                 
                 Text(tier == .premium ? "Enhanced Security" : "Basic Access")
                     .font(.caption)
-                    .foregroundColor(selectedTier == tier ? .white.opacity(0.8) : .gray)
+                    .foregroundColor(selectedTier == tier ? AppColors.textPrimary.opacity(0.8) : AppColors.textSecondary)
             }
             .frame(maxWidth: .infinity)
             .padding()
             .background(tierBackgroundColor(tier))
             .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.05), radius: 5)
+            .shadow(color: AppColors.background.opacity(0.3), radius: 5)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
                     .stroke(tierBorderColor(tier), lineWidth: 1)
@@ -267,6 +272,7 @@ struct PlanSelectionView: View {
         VStack(spacing: 16) {
             Text("Select Duration")
                 .font(.headline)
+                .foregroundColor(AppColors.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             VStack(spacing: 12) {
@@ -288,10 +294,11 @@ struct PlanSelectionView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(duration.rawValue)
                         .font(.headline)
+                        .foregroundColor(AppColors.textPrimary)
                     
                     Text(duration.description)
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
                 }
                 
                 Spacer()
@@ -299,9 +306,9 @@ struct PlanSelectionView: View {
                 durationPriceView(for: duration)
             }
             .padding()
-            .background(Color.white)
+            .background(AppColors.surface)
             .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.05), radius: 5)
+            .shadow(color: AppColors.background.opacity(0.3), radius: 5)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
                     .stroke(
@@ -317,18 +324,18 @@ struct PlanSelectionView: View {
             if duration == .hourly {
                 Text("$\(String(format: "%.2f", selectedTier.hourlyRate))")
                     .font(.headline)
-                    .foregroundColor(selectedTier == .premium ? AppColors.primaryYellow : Color.blue)
+                    .foregroundColor(selectedTier == .premium ? AppColors.secondary : Color.blue)
                 Text("per hour")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(AppColors.textSecondary)
             } else {
                 Text("$\(String(format: "%.2f", duration.getPrice(for: selectedTier)))")
                     .font(.headline)
-                    .foregroundColor(selectedTier == .premium ? AppColors.primaryYellow : Color.blue)
+                    .foregroundColor(selectedTier == .premium ? AppColors.secondary : Color.blue)
                 
                 Text("per day")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(AppColors.textSecondary)
             }
         }
     }
@@ -337,45 +344,46 @@ struct PlanSelectionView: View {
         VStack(spacing: 12) {
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: "info.circle.fill")
-                    .foregroundColor(selectedTier == .premium ? AppColors.primaryYellow : Color.blue)
+                    .foregroundColor(selectedTier == .premium ? AppColors.secondary : Color.blue)
                     .font(.system(size: 16))
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Pay-as-you-go Rental")
                         .font(.headline)
+                        .foregroundColor(AppColors.textPrimary)
                     Text("Your rental will start immediately and you'll only be charged for the time you use")
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
                 }
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white)
+            .background(AppColors.surface)
             .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.05), radius: 5)
+            .shadow(color: AppColors.background.opacity(0.3), radius: 5)
             
             // Rate info
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Rate")
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
                     Text("$\(String(format: "%.2f", selectedTier.hourlyRate))/hour")
                         .font(.title3)
                         .fontWeight(.semibold)
-                        .foregroundColor(selectedTier == .premium ? AppColors.primaryYellow : Color.blue)
+                        .foregroundColor(selectedTier == .premium ? AppColors.secondary : Color.blue)
                 }
                 
                 Spacer()
                 
                 Image(systemName: "clock.fill")
                     .font(.system(size: 24))
-                    .foregroundColor(selectedTier == .premium ? AppColors.primaryYellow : Color.blue)
+                    .foregroundColor(selectedTier == .premium ? AppColors.secondary : Color.blue)
             }
             .padding()
-            .background(Color.white)
+            .background(AppColors.surface)
             .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.05), radius: 5)
+            .shadow(color: AppColors.background.opacity(0.3), radius: 5)
         }
     }
     
@@ -383,22 +391,23 @@ struct PlanSelectionView: View {
         VStack(spacing: 12) {
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: "info.circle.fill")
-                    .foregroundColor(selectedTier == .premium ? AppColors.primaryYellow : Color.blue)
+                    .foregroundColor(selectedTier == .premium ? AppColors.secondary : Color.blue)
                     .font(.system(size: 16))
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("24-Hour Rental Period")
                         .font(.headline)
+                        .foregroundColor(AppColors.textPrimary)
                     Text("Your rental will start immediately and end after 24 hours")
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
                 }
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white)
+            .background(AppColors.surface)
             .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.05), radius: 5)
+            .shadow(color: AppColors.background.opacity(0.3), radius: 5)
             
             totalPriceView
         }
@@ -408,39 +417,41 @@ struct PlanSelectionView: View {
         HStack {
             Text("Total Price:")
                 .font(.headline)
+                .foregroundColor(AppColors.textPrimary)
             Spacer()
             Text("$\(String(format: "%.2f", totalPrice))")
                 .font(.title3)
                 .fontWeight(.bold)
-                .foregroundColor(selectedTier == .premium ? AppColors.primaryYellow : Color.blue)
+                .foregroundColor(selectedTier == .premium ? AppColors.secondary : Color.blue)
         }
         .padding()
-        .background(Color.white)
+        .background(AppColors.surface)
         .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.05), radius: 5)
+        .shadow(color: AppColors.background.opacity(0.3), radius: 5)
     }
     
     private var featuresSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("\(selectedTier.rawValue) Plan Features")
                 .font(.headline)
+                .foregroundColor(AppColors.textPrimary)
             
             ForEach(selectedTier.features, id: \.self) { feature in
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(selectedTier == .premium ? AppColors.primaryYellow : Color.blue)
+                        .foregroundColor(selectedTier == .premium ? AppColors.secondary : Color.blue)
                         .font(.system(size: 16))
                     
                     Text(feature)
                         .font(.subheadline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(AppColors.textPrimary)
                 }
             }
         }
         .padding()
-        .background(Color.white)
+        .background(AppColors.surface)
         .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.05), radius: 5)
+        .shadow(color: AppColors.background.opacity(0.3), radius: 5)
     }
     
     private var bottomButton: some View {
@@ -451,31 +462,33 @@ struct PlanSelectionView: View {
                 HStack {
                     if isProcessing {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .progressViewStyle(CircularProgressViewStyle(tint: AppColors.textPrimary))
                             .padding(.trailing, 8)
                     }
                     
                     Text(isProcessing ? "Processing..." : "Proceed to Rent")
                         .fontWeight(.semibold)
+                        .foregroundColor(AppColors.textPrimary)
                     
                     if !isProcessing {
                         Image(systemName: "key.fill")
+                            .foregroundColor(AppColors.textPrimary)
                     }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
-                .background(isProcessing ? Color.gray : AppColors.primaryBlack)
-                .foregroundColor(.white)
+                .background(isProcessing ? AppColors.secondary.opacity(0.5) : AppColors.primary)
+                .foregroundColor(AppColors.textPrimary)
                 .cornerRadius(12)
-                .shadow(color: Color.black.opacity(0.2), radius: 5)
+                .shadow(color: AppColors.background.opacity(0.5), radius: 5)
             }
             .disabled(isProcessing)
         }
         .padding()
         .background(
             Rectangle()
-                .fill(Color.white)
-                .shadow(color: Color.black.opacity(0.05), radius: 8, y: -4)
+                .fill(AppColors.surface)
+                .shadow(color: AppColors.background.opacity(0.3), radius: 8, y: -4)
         )
     }
     

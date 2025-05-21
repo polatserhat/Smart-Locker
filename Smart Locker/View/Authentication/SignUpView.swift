@@ -15,7 +15,7 @@ struct SignUpView: View {
                     dismiss()
                 }) {
                     Image(systemName: "arrow.left")
-                        .foregroundColor(AppColors.primaryBlack)
+                        .foregroundColor(AppColors.textPrimary)
                         .imageScale(.large)
                 }
                 Spacer()
@@ -26,10 +26,11 @@ struct SignUpView: View {
                 Text("Create new\nAccount")
                     .font(.largeTitle)
                     .fontWeight(.bold)
+                    .foregroundColor(AppColors.textPrimary)
                 
                 Text("Please fill in the form to continue")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundColor(AppColors.textSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             
@@ -43,7 +44,7 @@ struct SignUpView: View {
             if let errorMessage = authViewModel.errorMessage {
                 Text(errorMessage)
                     .font(.caption)
-                    .foregroundColor(.red)
+                    .foregroundColor(AppColors.error)
                     .padding(.top, 8)
             }
             
@@ -60,16 +61,16 @@ struct SignUpView: View {
                 }) {
                     if authViewModel.isLoading {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .progressViewStyle(CircularProgressViewStyle(tint: AppColors.textPrimary))
                     } else {
                         Text("Sign Up")
                             .fontWeight(.semibold)
                     }
                 }
-                .foregroundColor(.white)
+                .foregroundColor(AppColors.textPrimary)
                 .frame(maxWidth: .infinity)
                 .padding()
-                .background(AppColors.primaryBlack)
+                .background(AppColors.secondary)
                 .cornerRadius(12)
                 .disabled(authViewModel.isLoading)
                 
@@ -78,10 +79,10 @@ struct SignUpView: View {
                 }) {
                     HStack(spacing: 4) {
                         Text("Already have an account?")
-                            .foregroundColor(.gray)
+                            .foregroundColor(AppColors.textSecondary)
                         Text("Sign In")
                             .fontWeight(.medium)
-                            .foregroundColor(AppColors.primaryBlack)
+                            .foregroundColor(AppColors.secondary)
                     }
                     .font(.subheadline)
                 }
@@ -89,11 +90,13 @@ struct SignUpView: View {
             .padding(.bottom, 30)
         }
         .padding(.horizontal, 24)
-        .background(Color(UIColor.systemBackground))
+        .background(AppColors.background)
+        .preferredColorScheme(.dark)
     }
 }
 
 #Preview {
     SignUpView()
         .environmentObject(AuthViewModel())
+        .preferredColorScheme(.dark)
 } 

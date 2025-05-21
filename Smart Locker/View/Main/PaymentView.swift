@@ -72,10 +72,11 @@ struct PaymentView: View {
                 Text(checkoutTitle)
                     .font(.title2)
                     .fontWeight(.bold)
+                    .foregroundColor(AppColors.textPrimary)
                 
                 Text(checkoutSubtitle)
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundColor(AppColors.textSecondary)
             }
             .padding(.top, 20)
             
@@ -85,6 +86,7 @@ struct PaymentView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Order Summary")
                             .font(.headline)
+                            .foregroundColor(AppColors.textPrimary)
                         
                         VStack(alignment: .leading, spacing: 8) {
                             OrderDetailRow(title: "Locker Shop", value: rental.shopName)
@@ -99,14 +101,15 @@ struct PaymentView: View {
                         }
                     }
                     .padding()
-                    .background(Color.white)
+                    .background(AppColors.surface)
                     .cornerRadius(12)
-                    .shadow(color: Color.black.opacity(0.05), radius: 10)
+                    .shadow(color: AppColors.background.opacity(0.3), radius: 10)
                     
                     // Payment Methods
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Payment Method")
                             .font(.headline)
+                            .foregroundColor(AppColors.textPrimary)
                         
                         ForEach(paymentMethods) { method in
                             PaymentMethodRow(method: method, isSelected: selectedPaymentMethod?.id == method.id) {
@@ -115,15 +118,16 @@ struct PaymentView: View {
                         }
                     }
                     .padding()
-                    .background(Color.white)
+                    .background(AppColors.surface)
                     .cornerRadius(12)
-                    .shadow(color: Color.black.opacity(0.05), radius: 10)
+                    .shadow(color: AppColors.background.opacity(0.3), radius: 10)
                     
                     // Credit Card Form
                     if selectedPaymentMethod?.name == "Credit/Debit Card" {
                         VStack(alignment: .leading, spacing: 16) {
                             Text("Card Details")
                                 .font(.headline)
+                                .foregroundColor(AppColors.textPrimary)
                             
                             VStack(spacing: 16) {
                                 InputField(title: "CARDHOLDER NAME", text: $paymentDetails.cardholderName)
@@ -136,9 +140,9 @@ struct PaymentView: View {
                             }
                         }
                         .padding()
-                        .background(Color.white)
+                        .background(AppColors.surface)
                         .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.05), radius: 10)
+                        .shadow(color: AppColors.background.opacity(0.3), radius: 10)
                     }
                 }
                 .padding(.vertical)
@@ -151,7 +155,7 @@ struct PaymentView: View {
                 }) {
                     if isProcessing {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .progressViewStyle(CircularProgressViewStyle(tint: AppColors.textPrimary))
                             .frame(height: 24)
                     } else {
                         HStack {
@@ -166,14 +170,14 @@ struct PaymentView: View {
                                     .font(.system(size: 16))
                             }
                         }
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.textPrimary)
                     }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
-                .background(Color.black)
+                .background(AppColors.primary)
                 .cornerRadius(16)
-                .shadow(color: Color.black.opacity(0.2), radius: 5)
+                .shadow(color: AppColors.background.opacity(0.4), radius: 5)
                 .disabled(isProcessing)
                 
                 Button(action: {
@@ -181,7 +185,7 @@ struct PaymentView: View {
                 }) {
                     Text("Go Back")
                         .fontWeight(.medium)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
                         .padding(.vertical, 8)
                 }
             }
@@ -189,7 +193,7 @@ struct PaymentView: View {
             .padding(.bottom, 50)  // Increased bottom padding for easier access
         }
         .padding(.horizontal, 24)
-        .background(Color(UIColor.systemBackground))
+        .background(AppColors.background)
         .fullScreenCover(isPresented: $showConfirmation) {
             PaymentConfirmationView(rental: rental, location: location)
         }
@@ -230,11 +234,12 @@ struct OrderDetailRow: View {
         HStack {
             Text(title)
                 .font(isTotal ? .headline : .subheadline)
-                .foregroundColor(isTotal ? .black : .gray)
+                .foregroundColor(isTotal ? AppColors.textPrimary : AppColors.textSecondary)
             Spacer()
             Text(value)
                 .font(isTotal ? .headline : .subheadline)
                 .fontWeight(isTotal ? .bold : .regular)
+                .foregroundColor(AppColors.textPrimary)
         }
     }
 }
@@ -249,18 +254,20 @@ struct PaymentMethodRow: View {
             HStack {
                 Image(systemName: method.icon)
                     .font(.system(size: 20))
+                    .foregroundColor(AppColors.textPrimary)
                 Text(method.name)
                     .font(.subheadline)
+                    .foregroundColor(AppColors.textPrimary)
                 Spacer()
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(isSelected ? .black : .gray)
+                    .foregroundColor(isSelected ? AppColors.secondary : AppColors.textSecondary)
             }
             .padding()
-            .background(Color(UIColor.systemBackground))
+            .background(AppColors.surface)
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.black : Color.gray.opacity(0.3), lineWidth: 1)
+                    .stroke(isSelected ? AppColors.secondary : AppColors.textSecondary.opacity(0.3), lineWidth: 1)
             )
         }
         .foregroundColor(.primary)
@@ -288,4 +295,5 @@ struct PaymentMethodRow: View {
         )
     )
     .environmentObject(AuthViewModel())
+    .preferredColorScheme(.dark)
 } 

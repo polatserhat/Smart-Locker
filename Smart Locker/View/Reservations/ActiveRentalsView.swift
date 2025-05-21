@@ -13,7 +13,7 @@ struct ActiveRentalsView: View {
                     dismiss()
                 }) {
                     Image(systemName: "arrow.left")
-                        .foregroundColor(AppColors.primaryBlack)
+                        .foregroundColor(AppColors.primary)
                         .imageScale(.large)
                 }
                 
@@ -43,7 +43,7 @@ struct ActiveRentalsView: View {
                 VStack(spacing: 16) {
                     Image(systemName: "shippingbox")
                         .font(.system(size: 70))
-                        .foregroundColor(AppColors.primaryYellow)
+                        .foregroundColor(AppColors.secondary)
                     
                     Text("No Active Rentals")
                         .font(.title3)
@@ -114,7 +114,7 @@ struct ActiveRentalCard: View {
             HStack {
                 Image(systemName: "mappin.circle.fill")
                     .font(.title3)
-                    .foregroundColor(AppColors.primaryYellow)
+                    .foregroundColor(AppColors.secondary)
                 
                 Text(rental.locationName)
                     .font(.headline)
@@ -160,7 +160,7 @@ struct ActiveRentalCard: View {
                     .foregroundColor(.white)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
-                    .background(AppColors.primaryBlack)
+                    .background(AppColors.primary)
                     .cornerRadius(10)
                 }
                 
@@ -171,10 +171,10 @@ struct ActiveRentalCard: View {
                     }
                     .font(.subheadline)
                     .fontWeight(.medium)
-                    .foregroundColor(AppColors.primaryBlack)
+                    .foregroundColor(AppColors.primary)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
-                    .background(AppColors.primaryYellow)
+                    .background(AppColors.secondary)
                     .cornerRadius(10)
                 }
             }
@@ -195,7 +195,7 @@ struct ActiveRentalDetailRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
-                .foregroundColor(AppColors.primaryBlack)
+                .foregroundColor(AppColors.primary)
                 .frame(width: 20)
             
             Text(title)

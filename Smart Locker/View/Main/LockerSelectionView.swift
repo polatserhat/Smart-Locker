@@ -12,13 +12,13 @@ struct LockerSizeCard: View {
                 Image(systemName: size == .small ? "briefcase.fill" : 
                                 (size == .medium ? "cube.box.fill" : "shippingbox.fill"))
                     .font(.system(size: 24))
-                    .foregroundColor(isSelected ? AppColors.primaryYellow : Color.gray)
+                    .foregroundColor(isSelected ? AppColors.secondary : Color.gray)
                     .frame(height: 36)
                 
                 // Size name
                 Text(size.rawValue)
                     .font(.headline)
-                    .foregroundColor(isSelected ? AppColors.primaryBlack : .gray)
+                    .foregroundColor(isSelected ? AppColors.primary : .gray)
                 
                 // Dimensions
                 Text(size.dimensions)
@@ -28,7 +28,7 @@ struct LockerSizeCard: View {
                 // Price
                 Text("$\(String(format: "%.2f", size.basePrice))")
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(isSelected ? AppColors.primaryYellow : AppColors.primaryBlack)
+                    .foregroundColor(isSelected ? AppColors.secondary : AppColors.primary)
                     .padding(.top, 6)
             }
             .padding(.vertical, 20)
@@ -37,10 +37,9 @@ struct LockerSizeCard: View {
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? AppColors.primaryYellow : Color.gray.opacity(0.2), 
-                            lineWidth: isSelected ? 2 : 1)
+                    .stroke(isSelected ? AppColors.secondary : Color.gray.opacity(0.3), lineWidth: 1)
             )
-            .shadow(color: isSelected ? AppColors.primaryYellow.opacity(0.3) : Color.black.opacity(0.05), 
+            .shadow(color: isSelected ? AppColors.secondary.opacity(0.3) : Color.black.opacity(0.05), 
                     radius: isSelected ? 8 : 4)
         }
     }
@@ -85,7 +84,7 @@ struct LockerSelectionView: View {
                     }) {
                         Image(systemName: "info.circle")
                             .font(.system(size: 20))
-                            .foregroundColor(AppColors.primaryYellow)
+                            .foregroundColor(AppColors.secondary)
                     }
                 }
                 .padding(.top, 8)
@@ -95,7 +94,7 @@ struct LockerSelectionView: View {
                     // Shop name & location
                     HStack {
                         Image(systemName: "mappin.circle.fill")
-                            .foregroundColor(AppColors.primaryYellow)
+                            .foregroundColor(AppColors.secondary)
                             .font(.system(size: 20))
                         
                         Text(location.name)
@@ -117,8 +116,8 @@ struct LockerSelectionView: View {
                         .fontWeight(.medium)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(rentalType == .instant ? AppColors.primaryYellow.opacity(0.2) : Color.blue.opacity(0.2))
-                        .foregroundColor(rentalType == .instant ? AppColors.primaryBlack : Color.blue)
+                        .background(rentalType == .instant ? AppColors.secondary.opacity(0.2) : Color.blue.opacity(0.2))
+                        .foregroundColor(rentalType == .instant ? AppColors.primary : Color.blue)
                         .cornerRadius(12)
                     
                     Text("Step 1 of 2")
@@ -204,7 +203,7 @@ struct LockerSelectionView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(selectedSize != nil ? AppColors.primaryBlack : Color.gray)
+                    .background(selectedSize != nil ? AppColors.primary : Color.gray)
                     .foregroundColor(.white)
                     .cornerRadius(12)
                 }

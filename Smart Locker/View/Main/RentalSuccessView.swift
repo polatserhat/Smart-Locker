@@ -21,7 +21,7 @@ struct RentalSuccessView: View {
             // Success Icon
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 80))
-                .foregroundColor(AppColors.primaryYellow)
+                .foregroundColor(AppColors.secondary)
                 .padding(.top, 40)
             
             // Title
@@ -86,7 +86,7 @@ struct RentalSuccessView: View {
                                     Text("$\(String(format: "%.2f", rate))/hour")
                                         .font(.body)
                                         .fontWeight(.medium)
-                                        .foregroundColor(AppColors.primaryYellow)
+                                        .foregroundColor(AppColors.secondary)
                                 }
                             }
                         }
@@ -116,7 +116,7 @@ struct RentalSuccessView: View {
                                     Text("$\(String(format: "%.2f", amount))")
                                         .font(.title3)
                                         .fontWeight(.bold)
-                                        .foregroundColor(AppColors.primaryYellow)
+                                        .foregroundColor(AppColors.secondary)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.top, 8)
@@ -143,14 +143,14 @@ struct RentalSuccessView: View {
                     .fontWeight(.bold)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(AppColors.primaryYellow)
-                    .foregroundColor(AppColors.primaryBlack)
+                    .background(AppColors.secondary)
+                    .foregroundColor(AppColors.primary)
                     .cornerRadius(12)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 40)
         }
-        .background(Color(UIColor.systemBackground))
+        .background(AppColors.secondary)
     }
 }
 

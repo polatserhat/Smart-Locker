@@ -13,7 +13,6 @@ import Kingfisher
 // import SwiftUI // This is redundant, removing
 
 struct ProfilePageView: View {
-    @AppStorage("isDarkMode") private var isDarkMode: Bool = false
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var authViewModel: AuthViewModel
     @EnvironmentObject private var reservationViewModel: ReservationViewModel
@@ -36,7 +35,7 @@ struct ProfilePageView: View {
                             dismiss()
                         }) {
                             Image(systemName: "arrow.left")
-                                .foregroundColor(AppColors.primaryBlack)
+                                .foregroundColor(AppColors.textPrimary)
                                 .imageScale(.large)
                         }
                         Spacer()
@@ -64,8 +63,8 @@ struct ProfilePageView: View {
                             }
                             .frame(width: 100, height: 100)
                             .clipShape(Circle())
-                            .overlay(Circle().stroke(AppColors.primaryBlack, lineWidth: 3))
-                            .shadow(color: AppColors.primaryYellow.opacity(0.3), radius: 10)
+                            .overlay(Circle().stroke(AppColors.secondary, lineWidth: 3))
+                            .shadow(color: AppColors.secondary.opacity(0.3), radius: 10)
                         }
                         .onChange(of: selectedPhotoItem) { newItem in
                             Task {
@@ -82,10 +81,11 @@ struct ProfilePageView: View {
                             Text(authViewModel.currentUser?.name ?? "User")
                                 .font(.title2)
                                 .fontWeight(.bold)
+                                .foregroundColor(AppColors.textPrimary)
                             
                             Text(authViewModel.currentUser?.email ?? "")
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(AppColors.textSecondary)
                         }
                     }
                     .padding(.vertical, 20)
@@ -117,11 +117,6 @@ struct ProfilePageView: View {
                         
                         // Preferences Section
                         SettingsSection(title: "Preferences") {
-                            SettingsRow(icon: "moon.fill", title: "Dark Mode") {
-                                Toggle("", isOn: $isDarkMode)
-                                    .tint(AppColors.primaryYellow)
-                            }
-                            
                             NavigationLink {
                                 Text("Notifications Settings")
                             } label: {
@@ -158,18 +153,18 @@ struct ProfilePageView: View {
                             Image(systemName: "arrow.right.circle.fill")
                                 .font(.system(size: 20))
                         }
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.textPrimary)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(AppColors.primaryBlack)
+                        .background(AppColors.secondary)
                         .cornerRadius(16)
-                        .shadow(color: AppColors.primaryBlack.opacity(0.2), radius: 10, x: 0, y: 5)
+                        .shadow(color: AppColors.primary.opacity(0.2), radius: 10, x: 0, y: 5)
                     }
                     .padding(.vertical, 20)
                 }
                 .padding(.horizontal, 24)
             }
-            .background(Color(UIColor.systemBackground))
+            .background(AppColors.background)
             .navigationBarHidden(true)
             .fullScreenCover(isPresented: $showUpdateEmail) {
                 UpdateEmailView()
@@ -188,7 +183,6 @@ struct ProfilePageView: View {
                     .environmentObject(reservationViewModel)
             }
         }
-        .preferredColorScheme(isDarkMode ? .dark : .light)
         .onAppear {
             // This is a good place to fetch user data if it might be stale,
             // though AuthViewModel already fetches on auth state change.
@@ -220,13 +214,13 @@ struct SettingsSection<Content: View>: View {
         VStack(alignment: .leading, spacing: 16) {
             Text(title)
                 .font(.headline)
-                .foregroundColor(.gray)
+                .foregroundColor(AppColors.textSecondary)
                 .padding(.leading, 8)
             
             VStack(spacing: 0) {
                 content()
             }
-            .background(Color(UIColor.systemGray6))
+            .background(AppColors.surface)
             .cornerRadius(16)
         }
     }
@@ -264,17 +258,18 @@ struct SettingsRow: View {
         HStack {
             Image(systemName: icon)
                 .font(.system(size: 20))
-                .foregroundColor(AppColors.primaryBlack)
+                .foregroundColor(AppColors.secondary)
                 .frame(width: 32)
             
             Text(title)
                 .font(.body)
+                .foregroundColor(AppColors.textPrimary)
             
             Spacer()
             
             if let value = value {
                 Text(value)
-                    .foregroundColor(.gray)
+                    .foregroundColor(AppColors.textSecondary)
             }
             
             if let trailingContent = trailingContent {
@@ -284,11 +279,11 @@ struct SettingsRow: View {
             if trailingContent == nil && value == nil {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.gray)
+                    .foregroundColor(AppColors.textSecondary)
             }
         }
         .padding()
-        .background(Color(UIColor.systemBackground))
+        .background(AppColors.surface)
     }
 }
 
@@ -308,5 +303,6 @@ struct ProfilePageView_Previews: PreviewProvider {
         return ProfilePageView()
             .environmentObject(mockAuthViewModel)
             .environmentObject(mockReservationViewModel)
+            .preferredColorScheme(.dark)
     }
 }

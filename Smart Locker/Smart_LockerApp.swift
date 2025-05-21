@@ -29,8 +29,7 @@ struct SmartLockerApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var authViewModel = AuthViewModel() // ✅ Ensuring Singleton Instance
     @StateObject private var reservationViewModel = ReservationViewModel() // ✅ Singleton for Reservations
-    @AppStorage("isDarkMode") private var isDarkMode = false
-
+    
     init() {
         print("📱 App starting, initializing locker system...")
         
@@ -46,7 +45,7 @@ struct SmartLockerApp: App {
     var body: some Scene {
         WindowGroup {
             MainView()
-                .preferredColorScheme(isDarkMode ? .dark : .light)
+                .preferredColorScheme(.dark) // Always use dark mode for the app
                 .environmentObject(authViewModel) // ✅ Providing AuthViewModel to All Views
                 .environmentObject(reservationViewModel) // ✅ Providing ReservationViewModel to All Views
                 .onAppear {
@@ -69,7 +68,7 @@ struct MainView: View {
     var body: some View {
         Group {
             if authViewModel.isAuthenticated {
-                HomeView()
+                AppTabView()
                     .onReceive(authViewModel.$navigateToHome) { navigate in
                         if navigate {
                             // Reset the flag after navigation
@@ -82,6 +81,8 @@ struct MainView: View {
                 OnboardingView()
             }
         }
+        .background(AppColors.background)
+        .environment(\.colorScheme, .dark) // Ensure dark mode even if system theme changes
     }
 }
 
@@ -94,5 +95,6 @@ struct MainView_Previews: PreviewProvider {
         return MainView()
             .environmentObject(mockAuthViewModel)
             .environmentObject(mockReservationViewModel)
+            .preferredColorScheme(.dark)
     }
 }

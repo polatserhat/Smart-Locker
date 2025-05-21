@@ -4,269 +4,205 @@ import MapKit
 struct LockerConfirmationView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var authViewModel: AuthViewModel
-    @State private var showPaymentView = false
+    @State private var navigateToPayment = false
+    @State private var isProcessing = false
     @State private var error: String?
     @State private var showError = false
-    @State private var isProcessing = false
     
     let rental: LockerRental
     let location: LockerLocation
     
-    private var basePrice: Double {
-        return rental.plan?.price ?? rental.size.basePrice
-    }
-    
-    private var totalPrice: Double {
-        return rental.totalPrice ?? (basePrice * 1.1)
-    }
-    
     var body: some View {
         VStack(spacing: 24) {
-            // Header with back button
-            HStack {
-                Button(action: {
-                    dismiss()
-                }) {
-                    Image(systemName: "arrow.left")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(AppColors.primaryBlack)
-                }
-                
-                Spacer()
-                
-                Text("Confirm Details")
-                    .font(.title3)
+            // Header
+            VStack(spacing: 8) {
+                Text("Locker Details")
+                    .font(.title2)
                     .fontWeight(.bold)
+                    .foregroundColor(AppColors.textPrimary)
                 
-                Spacer()
+                Text("Confirm your selected locker")
+                    .font(.subheadline)
+                    .foregroundColor(AppColors.textSecondary)
             }
             .padding(.top, 20)
             
-            // Location and Size Summary
-            VStack(spacing: 20) {
-                // Location Info
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Location")
-                        .font(.headline)
-                        .foregroundColor(.gray)
-                    
-                    Text(rental.shopName)
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                    
-                    Text(location.address)
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+            // Location Map
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Location")
+                    .font(.headline)
+                    .foregroundColor(AppColors.textPrimary)
                 
-                Divider()
-                
-                // Locker Size Info
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Locker Size")
-                        .font(.headline)
-                        .foregroundColor(.gray)
+                ZStack(alignment: .bottom) {
+                    Map(coordinateRegion: .constant(MKCoordinateRegion(
+                        center: location.coordinate,
+                        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                    )), annotationItems: [AnnotationItem(coordinate: location.coordinate)]) { item in
+                        MapMarker(coordinate: item.coordinate, tint: AppColors.secondary)
+                    }
+                    .frame(height: 180)
+                    .cornerRadius(12)
                     
                     HStack {
-                        Text(rental.size.rawValue)
-                            .font(.title3)
-                            .fontWeight(.semibold)
-                        
-                        Text("(\(rental.size.dimensions))")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                
-                // Plan Info
-                if let plan = rental.plan {
-                    Divider()
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Selected Plan")
-                            .font(.headline)
-                            .foregroundColor(.gray)
-                        
-                        HStack {
-                            Text(plan.tier.rawValue)
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                                .foregroundColor(plan.tier == .premium ? AppColors.primaryYellow : Color.blue)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(location.name)
+                                .font(.headline)
+                                .foregroundColor(AppColors.textPrimary)
                             
-                            Text("- \(plan.duration.rawValue)")
+                            Text(location.address)
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(AppColors.textSecondary)
+                                .lineLimit(1)
                         }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                
-                if rental.rentalType == .reservation {
-                    Divider()
-                    
-                    // Reservation Date
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Reservation Date")
-                            .font(.headline)
-                            .foregroundColor(.gray)
                         
-                        if let date = rental.reservationDate {
-                            Text(date.formatted(.dateTime.day().month().year().hour().minute()))
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                        }
+                        Spacer()
+                        
+                        Image(systemName: "arrow.right")
+                            .foregroundColor(AppColors.textSecondary)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(AppColors.surface)
+                    .cornerRadius(8)
+                    .padding(12)
                 }
             }
             .padding()
-            .background(Color.white)
+            .background(AppColors.surface)
             .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.05), radius: 10)
+            .shadow(color: AppColors.background.opacity(0.3), radius: 10)
             
-            // Pricing Details
-            VStack(spacing: 16) {
-                Text("Pricing Details")
+            // Locker Details
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Selected Locker")
                     .font(.headline)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .foregroundColor(AppColors.textPrimary)
                 
-                VStack(spacing: 12) {
-                    HStack {
-                        Text("Base Price")
-                        Spacer()
-                        Text("$\(String(format: "%.2f", basePrice))")
+                HStack(spacing: 18) {
+                    // Locker Size Visualization
+                    VStack(spacing: 12) {
+                        RoundedRectangle(cornerRadius: 8)
+                            .frame(width: 80, height: 80)
+                            .foregroundColor(AppColors.secondary.opacity(0.2))
+                            .overlay(
+                                Image(systemName: sizeIcon(for: rental.size))
+                                    .font(.system(size: 36))
+                                    .foregroundColor(AppColors.secondary)
+                            )
+                        
+                        Text(rental.size.rawValue)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(AppColors.textPrimary)
                     }
                     
-                    HStack {
-                        Text("Tax (10%)")
-                        Spacer()
-                        Text("$\(String(format: "%.2f", basePrice * 0.1))")
-                    }
-                    
-                    Divider()
-                    
-                    HStack {
-                        Text("Total")
-                            .fontWeight(.semibold)
-                        Spacer()
-                        Text("$\(String(format: "%.2f", totalPrice))")
-                            .fontWeight(.semibold)
+                    VStack(alignment: .leading, spacing: 12) {
+                        LockerDetailRow(title: "Dimensions", value: rental.size.dimensions)
+                        LockerDetailRow(title: "Max Weight", value: rental.size.maxWeight)
+                        LockerDetailRow(title: "Hourly Rate", value: "$\(String(format: "%.2f", rental.size.basePrice))/hour")
+                        LockerDetailRow(title: "Availability", value: "Available Now", highlighted: true)
                     }
                 }
-                .padding()
-                .background(Color.white)
-                .cornerRadius(12)
-                .shadow(color: Color.black.opacity(0.05), radius: 10)
             }
+            .padding()
+            .background(AppColors.surface)
+            .cornerRadius(12)
+            .shadow(color: AppColors.background.opacity(0.3), radius: 10)
             
             Spacer()
             
-            // Terms and Conditions
-            VStack(spacing: 8) {
-                Text("By proceeding, you agree to our")
-                    .font(.footnote)
-                    .foregroundColor(.gray)
+            // CTA Buttons
+            VStack(spacing: 16) {
+                Button(action: {
+                    proceedToPlans()
+                }) {
+                    if isProcessing {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: AppColors.textPrimary))
+                            .frame(height: 24)
+                    } else {
+                        Text("Select This Locker")
+                            .fontWeight(.semibold)
+                            .foregroundColor(AppColors.textPrimary)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .background(AppColors.primary)
+                .cornerRadius(16)
+                .shadow(color: AppColors.background.opacity(0.4), radius: 4, y: 2)
+                .disabled(isProcessing)
                 
                 Button(action: {
-                    // Show Terms and Conditions
+                    dismiss()
                 }) {
-                    Text("Terms and Conditions")
-                        .font(.footnote)
+                    Text("Go Back")
                         .fontWeight(.medium)
-                        .foregroundColor(AppColors.primaryBlack)
-                        .underline()
+                        .foregroundColor(AppColors.textSecondary)
                 }
             }
-            
-            // CTA Button
-            Button(action: {
-                if rental.rentalType == .reservation {
-                    createReservation()
-                } else {
-                    showPaymentView = true
-                }
-            }) {
-                if isProcessing {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        .frame(height: 24)
-                } else {
-                    HStack(spacing: 16) {
-                        Image(systemName: rental.rentalType == .reservation ? "calendar.badge.checkmark" : "creditcard.fill")
-                            .font(.system(size: 20))
-                        
-                        Text(rental.rentalType == .reservation ? "Confirm Reservation" : "Proceed to Payment")
-                            .fontWeight(.semibold)
-                        
-                        if !isProcessing {
-                            Image(systemName: "arrow.right")
-                                .font(.system(size: 16))
-                        }
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        LinearGradient(
-                            gradient: Gradient(colors: [AppColors.primaryBlack, Color(UIColor.darkGray)]),
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .cornerRadius(16)
-                    .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
-                }
-            }
-            .disabled(isProcessing)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 50)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 32)
         }
         .padding(.horizontal, 24)
-        .background(Color(UIColor.systemBackground))
-        .fullScreenCover(isPresented: $showPaymentView) {
-            PaymentView(rental: rental, location: location)
-        }
+        .background(AppColors.background)
+        .navigationBarBackButtonHidden(true)
         .alert("Error", isPresented: $showError) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(error ?? "An error occurred")
         }
+        .fullScreenCover(isPresented: $navigateToPayment) {
+            PlanSelectionView(rental: rental, location: location)
+        }
     }
     
-    private func createReservation() {
-        guard let userId = authViewModel.currentUser?.id else {
-            error = "User not logged in"
-            showError = true
-            return
+    private func sizeIcon(for size: LockerSize) -> String {
+        switch size {
+        case .small: return "briefcase"
+        case .medium: return "bag"
+        case .large: return "cube.box"
         }
-        
-        guard let reservationDate = rental.reservationDate else {
-            error = "No reservation date selected"
+    }
+    
+    private func proceedToPlans() {
+        guard authViewModel.currentUser != nil else {
+            error = "You need to be logged in to rent a locker"
             showError = true
             return
         }
         
         isProcessing = true
         
-        FirestoreService.shared.createReservation(
-            userId: userId,
-            location: location,
-            size: rental.size,
-            dates: [reservationDate]
-        ) { result in
+        // Simulate processing
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             isProcessing = false
-            
-            switch result {
-            case .success:
-                showPaymentView = true
-            case .failure(let error):
-                self.error = error.localizedDescription
-                showError = true
-            }
+            navigateToPayment = true
         }
     }
+}
+
+struct LockerDetailRow: View {
+    let title: String
+    let value: String
+    var highlighted: Bool = false
+    
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.subheadline)
+                .foregroundColor(AppColors.textSecondary)
+            Spacer()
+            Text(value)
+                .font(.subheadline)
+                .fontWeight(highlighted ? .semibold : .regular)
+                .foregroundColor(highlighted ? AppColors.secondary : AppColors.textPrimary)
+        }
+    }
+}
+
+struct AnnotationItem: Identifiable {
+    let id = UUID()
+    let coordinate: CLLocationCoordinate2D
 }
 
 #Preview {
@@ -276,12 +212,12 @@ struct LockerConfirmationView: View {
             shopName: "Airport Terminal 1",
             size: LockerSize.medium,
             rentalType: RentalType.instant,
-            reservationDate: nil as Date?,
+            reservationDate: nil,
             startTime: nil,
             endTime: nil,
             status: .pending,
-            totalPrice: 15.0,
-            plan: Plan(tier: .standard, duration: .daily, totalHours: 24)
+            totalPrice: nil,
+            plan: nil
         ),
         location: LockerLocation(
             name: "Airport Terminal 1",
@@ -290,4 +226,5 @@ struct LockerConfirmationView: View {
         )
     )
     .environmentObject(AuthViewModel())
+    .preferredColorScheme(.dark)
 } 

@@ -143,3 +143,79 @@ Validate payments before unlocking.
 
 
 
+
+
+### Direct Rent Flow
+
+1. **HomeView.swift**:
+   - User clicks the "DIRECT RENT" button.
+   - Transition to `LockerMapView`.
+
+2. **LockerMapView.swift**:
+   - User selects a location.
+   - Transition to `LockerSelectionView`.
+
+3. **LockerSelectionView.swift**:
+   - User selects a locker size.
+   - Transition to `PlanSelectionView`.
+
+4. **PlanSelectionView.swift**:
+   - User selects a plan and clicks "Proceed to Rent".
+   - Transition to `ConfirmationView`.
+
+5. **ConfirmationView.swift**:
+   - User clicks "Start Rental".
+   - Transition back to `HomeView`.
+   - Start the timer in the "Active Rental" section.
+
+6. **HomeView.swift**:
+   - User sees the rental in the "Active Rental" section.
+   - User clicks "End Rental".
+   - Transition to `PaymentView`.
+
+7. **PaymentView.swift**:
+   - User completes the payment.
+   - Process is over.
+
+### Reservation Flow
+
+1. **HomeView.swift**:
+   - User clicks the "RESERVATION" button.
+   - Transition to `ReservationDateSelectionView`.
+
+2. **ReservationDateSelectionView.swift**:
+   - User selects a date and start time (add start time selection).
+   - Transition to `LockerMapView`.
+
+3. **LockerMapView.swift**:
+   - User selects a location.
+   - Transition to `PlanSelectionView`.
+
+4. **PlanSelectionView.swift**:
+   - User selects a plan and clicks "Proceed to Rent".
+   - Transition to `ConfirmationView`.
+
+5. **ConfirmationView.swift**:
+   - User clicks "Confirm Reservation" (add this button).
+   - Transition back to `HomeView`.
+
+6. **HomeView.swift**:
+   - User sees the reservation in the "Upcoming Reservation" section (add this section).
+   - User can see the date and start time.
+   - User can click "Cancel Reservation" or "End Rental" (add these buttons).
+   - Transition to `PaymentView` when any button is clicked.
+
+7. **PaymentView.swift**:
+   - User completes the payment.
+   - Process is over.
+
+### Additional Notes
+
+- **ConfirmationView.swift**: Ensure it handles both "Start Rental", "Complete
+"Confirm Reservation" actions.
+- **HomeView.swift**: Add logic to display "Active Rental" and "Upcoming Reservation" sections.
+- **ReservationDateSelectionView.swift**: Implement start time selection.
+- **PlanSelectionView.swift**: Ensure it supports both direct rent and reservation flows.
+- **PaymentView.swift**: Ensure it can handle payments for both direct rent and reservation flows.
+
+
