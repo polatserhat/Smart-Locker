@@ -543,6 +543,9 @@ struct PlanSelectionView: View {
                     self.errorMessage = error.localizedDescription
                     self.showError = true
                 } else {
+                    // Update the locker availability
+                    self.updateLockerAvailability(for: self.rental.size.rawValue, at: self.location.id.uuidString)
+                    
                     // Post notification to refresh the locker map
                     NotificationCenter.default.post(name: Notification.Name("RefreshLockerMap"), object: nil)
                     
@@ -551,6 +554,24 @@ struct PlanSelectionView: View {
                 }
             }
         }
+    }
+    
+    // Helper method to update locker availability
+    private func updateLockerAvailability(for size: String, at locationId: String) {
+        let db = Firestore.firestore()
+        
+        // Update the location document to decrement the available count
+        db.collection("locations")
+            .document(locationId)
+            .updateData([
+                "availableLockers.\(size.lowercased())": FieldValue.increment(Int64(-1))
+            ]) { error in
+                if let error = error {
+                    print("Error updating locker availability: \(error.localizedDescription)")
+                } else {
+                    print("Successfully decremented available locker count for \(size)")
+                }
+            }
     }
 }
 

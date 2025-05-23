@@ -300,6 +300,9 @@ struct PaymentConfirmationView: View {
             // Mark the rental as completed in the view model
             self.reservationViewModel.completeRental(rentalId: self.rental.id)
             
+            // Update the locker availability in Firestore
+            self.updateLockerAvailability(for: self.rental.size.rawValue, at: self.location.id.uuidString)
+            
             // Post notification to refresh data
             NotificationCenter.default.post(name: Notification.Name("RefreshLockerMap"), object: nil)
             
@@ -309,6 +312,24 @@ struct PaymentConfirmationView: View {
             // Show success view
             self.showSuccess = true
         }
+    }
+    
+    // Helper method to update locker availability
+    private func updateLockerAvailability(for size: String, at locationId: String) {
+        let db = Firestore.firestore()
+        
+        // Update the location document to decrement the available count
+        db.collection("locations")
+            .document(locationId)
+            .updateData([
+                "availableLockers.\(size.lowercased())": FieldValue.increment(Int64(-1))
+            ]) { error in
+                if let error = error {
+                    print("Error updating locker availability: \(error.localizedDescription)")
+                } else {
+                    print("Successfully decremented available locker count for \(size)")
+                }
+            }
     }
 }
 

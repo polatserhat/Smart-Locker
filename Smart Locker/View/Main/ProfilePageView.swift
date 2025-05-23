@@ -24,6 +24,7 @@ struct ProfilePageView: View {
     // State for photo picker
     @State private var selectedPhotoItem: PhotosPickerItem? = nil
     @State private var selectedImageData: Data? = nil
+    @State private var localProfileImage: UIImage? = nil
     
     var body: some View {
         NavigationView {
@@ -46,7 +47,11 @@ struct ProfilePageView: View {
                     VStack(spacing: 16) {
                         PhotosPicker(selection: $selectedPhotoItem, matching: .images, photoLibrary: .shared()) {
                             Group {
-                                if let profileUrlString = authViewModel.currentUser?.profileImageUrl, let url = URL(string: profileUrlString) {
+                                if let localImage = localProfileImage {
+                                    Image(uiImage: localImage)
+                                        .resizable()
+                                        .scaledToFill()
+                                } else if let profileUrlString = authViewModel.currentUser?.profileImageUrl, let url = URL(string: profileUrlString) {
                                     KFImage(url)
                                         .placeholder { // Placeholder while loading or if URL is invalid
                                             Image("profile_placeholder")
@@ -71,6 +76,11 @@ struct ProfilePageView: View {
                                 if let data = try? await newItem?.loadTransferable(type: Data.self) {
                                     selectedImageData = data
                                     if let imageData = selectedImageData, let uiImage = UIImage(data: imageData) {
+                                        // Save to UserDefaults
+                                        saveImageToUserDefaults(uiImage)
+                                        // Update local state
+                                        localProfileImage = uiImage
+                                        // Also update Firebase when it's available
                                         authViewModel.updateProfileImage(image: uiImage)
                                     }
                                 }
@@ -184,8 +194,9 @@ struct ProfilePageView: View {
             }
         }
         .onAppear {
-            // This is a good place to fetch user data if it might be stale,
-            // though AuthViewModel already fetches on auth state change.
+            // Load profile image from UserDefaults when view appears
+            loadImageFromUserDefaults()
+            
             // If an error occurs during image upload, display it.
             // Consider adding an alert to show authViewModel.errorMessage if it's not nil.
         }
@@ -197,6 +208,38 @@ struct ProfilePageView: View {
         }, message: {
             Text(authViewModel.errorMessage ?? "An unknown error occurred.")
         })
+    }
+    
+    // MARK: - UserDefaults Helper Methods
+    
+    private func saveImageToUserDefaults(_ image: UIImage) {
+        if let imageData = image.jpegData(compressionQuality: 0.7) {
+            UserDefaults.standard.set(imageData, forKey: "userProfileImage")
+            
+            // If we have a user ID, also store it with that key for multi-user support
+            if let userId = authViewModel.currentUser?.id {
+                UserDefaults.standard.set(imageData, forKey: "userProfileImage_\(userId)")
+            }
+            
+            // Post notification that profile image was updated
+            NotificationCenter.default.post(name: NSNotification.Name("ProfileImageUpdated"), object: nil)
+        }
+    }
+    
+    private func loadImageFromUserDefaults() {
+        // First try user-specific image if we have a user ID
+        if let userId = authViewModel.currentUser?.id, 
+           let imageData = UserDefaults.standard.data(forKey: "userProfileImage_\(userId)"),
+           let image = UIImage(data: imageData) {
+            localProfileImage = image
+            return
+        }
+        
+        // Fall back to generic key
+        if let imageData = UserDefaults.standard.data(forKey: "userProfileImage"),
+           let image = UIImage(data: imageData) {
+            localProfileImage = image
+        }
     }
 }
 

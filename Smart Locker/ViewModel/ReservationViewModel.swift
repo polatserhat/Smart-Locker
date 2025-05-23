@@ -120,6 +120,46 @@ class ReservationViewModel: ObservableObject {
                     print("Error updating rental status: \(error.localizedDescription)")
                 }
             }
+            
+            // Update the locker availability count
+            updateLockerAvailability(for: rental)
         }
+    }
+    
+    // Helper method to update locker availability
+    private func updateLockerAvailability(for rental: Rental) {
+        // Get the location document
+        db.collection("locations")
+            .whereField("name", isEqualTo: rental.locationName)
+            .limit(to: 1)
+            .getDocuments { snapshot, error in
+                if let error = error {
+                    print("Error finding location: \(error.localizedDescription)")
+                    return
+                }
+                
+                guard let locationDoc = snapshot?.documents.first else {
+                    print("Location not found")
+                    return
+                }
+                
+                // Update the available locker count
+                let lockerSize = rental.size.lowercased()
+                let locationRef = locationDoc.reference
+                
+                // Increment the available count for this size
+                locationRef.updateData([
+                    "availableLockers.\(lockerSize)": FieldValue.increment(Int64(-1))
+                ]) { error in
+                    if let error = error {
+                        print("Error updating locker availability: \(error.localizedDescription)")
+                    } else {
+                        print("Successfully decremented available locker count for \(lockerSize)")
+                        
+                        // Post notification to refresh the locker map
+                        NotificationCenter.default.post(name: Notification.Name("RefreshLockerMap"), object: nil)
+                    }
+                }
+            }
     }
 } 

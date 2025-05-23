@@ -2,6 +2,25 @@ import SwiftUI
 import FirebaseFirestore
 import MapKit
 
+// MARK: - Profile Image Helper
+extension UserDefaults {
+    static func getProfileImage(for userId: String? = nil) -> UIImage? {
+        // First try user-specific image if we have a user ID
+        if let userId = userId, 
+           let imageData = UserDefaults.standard.data(forKey: "userProfileImage_\(userId)"),
+           let image = UIImage(data: imageData) {
+            return image
+        }
+        
+        // Fall back to generic key
+        if let imageData = UserDefaults.standard.data(forKey: "userProfileImage"),
+           let image = UIImage(data: imageData) {
+            return image
+        }
+        
+        return nil
+    }
+}
 
 struct CategoryButton: View {
     let icon: String
@@ -43,6 +62,7 @@ struct HomeView: View {
     @State private var calculatedAmount: Double = 0
     @State private var selectedRental: LockerRental?
     @State private var selectedLocation: LockerLocation?
+    @State private var localProfileImage: UIImage? = nil
     @EnvironmentObject private var authViewModel: AuthViewModel
     @EnvironmentObject private var reservationViewModel: ReservationViewModel
     
@@ -265,7 +285,14 @@ struct HomeView: View {
                     Button(action: {
                         showProfile = true
                     }) {
-                        if let user = authViewModel.currentUser {
+                        if let localImage = localProfileImage {
+                            Image(uiImage: localImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 48, height: 48)
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(AppColors.secondary.opacity(0.5), lineWidth: 1))
+                        } else if let user = authViewModel.currentUser {
                             Image("profile_placeholder")
                                 .resizable()
                                 .scaledToFill()
@@ -537,6 +564,9 @@ struct HomeView: View {
                 }
             }
             .onAppear {
+                // Load profile image from UserDefaults
+                loadProfileImage()
+                
                 // Start timer for active rental when view appears
                 if let activeRental = reservationViewModel.currentRentals.first {
                     startTimer(for: activeRental)
@@ -574,8 +604,17 @@ struct HomeView: View {
                     }
                 }
             }
+            // Listen for profile image updates
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ProfileImageUpdated"))) { _ in
+                loadProfileImage()
+            }
         }
         .preferredColorScheme(.dark)
+    }
+    
+    // MARK: - Profile Image Helper
+    private func loadProfileImage() {
+        localProfileImage = UserDefaults.getProfileImage(for: authViewModel.currentUser?.id)
     }
 }
 
