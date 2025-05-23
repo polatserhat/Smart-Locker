@@ -9,77 +9,89 @@ struct UpdateEmailView: View {
     @State private var isLoading: Bool = false
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                Button(action: {
-                    dismiss()
-                }) {
-                    Image(systemName: "arrow.left")
-                        .foregroundColor(.black)
-                }
-                
-                Spacer()
-                
-                Text("Update Email")
-                    .font(.headline)
-                
-                Spacer()
-                
-                Color.clear
-                    .frame(width: 24)
-            }
-            .padding(.horizontal, 20)
-            
-            // Content
-            VStack(spacing: 16) {
-                Spacer()
-                    .frame(height: 60)
-                
-                // Email icon
-                Image(systemName: "envelope.fill")
-                    .font(.system(size: 28))
-                    .foregroundColor(.yellow)
-                    .padding()
-                    .background(Color.yellow.opacity(0.15))
-                    .clipShape(Circle())
-                
-                Text("Change your email address")
-                    .font(.headline)
-                
-                Text("Your current email: Not available")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                
-                Spacer()
-                    .frame(height: 30)
-                
-                // Form fields
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                // Header - at the very top
                 HStack {
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Image(systemName: "arrow.left")
+                            .foregroundColor(AppColors.textPrimary)
+                            .imageScale(.large)
+                    }
+                    
                     Spacer()
+                    
+                    Text("Update Email")
+                        .font(.headline)
+                        .foregroundColor(AppColors.textPrimary)
+                    
+                    Spacer()
+                    
+                    Color.clear
+                        .frame(width: 24)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 50)
+                .frame(height: 80)
+                
+                // Content - centered in remaining space
+                VStack(spacing: 24) {
+                    Spacer()
+                    
+                    // Icon and title section
+                    VStack(spacing: 16) {
+                        Image(systemName: "envelope.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(AppColors.secondary)
+                            .padding()
+                            .background(AppColors.secondary.opacity(0.15))
+                            .clipShape(Circle())
+                        
+                        Text("Change your email address")
+                            .font(.headline)
+                            .foregroundColor(AppColors.textPrimary)
+                        
+                        Text("Current email: \(authViewModel.currentUser?.email ?? "Not available")")
+                            .font(.subheadline)
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                    
+                    // Form fields
                     VStack(alignment: .leading, spacing: 20) {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("New Email Address")
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(AppColors.textSecondary)
                             
                             TextField("example@email.com", text: $newEmail)
                                 .keyboardType(.emailAddress)
                                 .autocapitalization(.none)
                                 .padding()
-                                .background(Color(UIColor.systemGray6))
+                                .background(AppColors.surface)
+                                .foregroundColor(AppColors.textPrimary)
                                 .cornerRadius(8)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(AppColors.secondary.opacity(0.3), lineWidth: 1)
+                                )
                         }
                         
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Current Password for Verification")
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(AppColors.textSecondary)
                             
                             SecureField("Enter your password", text: $password)
                                 .padding()
-                                .background(Color(UIColor.systemGray6))
+                                .background(AppColors.surface)
+                                .foregroundColor(AppColors.textPrimary)
                                 .cornerRadius(8)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(AppColors.secondary.opacity(0.3), lineWidth: 1)
+                                )
                         }
                         
                         Button(action: {
@@ -87,28 +99,38 @@ struct UpdateEmailView: View {
                         }) {
                             if isLoading {
                                 ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .progressViewStyle(CircularProgressViewStyle(tint: AppColors.textPrimary))
                             } else {
                                 Text("Update Email")
                                     .fontWeight(.medium)
                             }
                         }
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.textPrimary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(Color.gray)
+                        .background(AppColors.secondary)
                         .cornerRadius(8)
                         .padding(.top, 12)
+                        .disabled(newEmail.isEmpty || password.isEmpty || isLoading)
+                        .opacity((newEmail.isEmpty || password.isEmpty || isLoading) ? 0.6 : 1.0)
                     }
+                    .padding(.horizontal, 20)
+                    
                     Spacer()
                 }
-                .padding(.horizontal, 20)
-                
-                Spacer()
             }
         }
-        .background(Color.white)
-        .edgesIgnoringSafeArea(.top)
+        .background(AppColors.background)
+        .navigationBarHidden(true)
+        .ignoresSafeArea(.all, edges: .top)
+        // Add alert for error messages
+        .alert("Error", isPresented: .constant(authViewModel.errorMessage != nil), actions: {
+            Button("OK", role: .cancel) {
+                authViewModel.errorMessage = nil
+            }
+        }, message: {
+            Text(authViewModel.errorMessage ?? "An unknown error occurred.")
+        })
     }
     
     private func updateEmail() {
@@ -120,6 +142,10 @@ struct UpdateEmailView: View {
                 // Clear the form
                 self.newEmail = ""
                 self.password = ""
+                // Dismiss the view on success
+                DispatchQueue.main.async {
+                    self.dismiss()
+                }
             }
             
             self.isLoading = false
@@ -139,5 +165,6 @@ struct UpdateEmailView_Previews: PreviewProvider {
         
         return UpdateEmailView()
             .environmentObject(mockAuthViewModel)
+            .preferredColorScheme(.dark)
     }
 } 
