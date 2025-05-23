@@ -434,6 +434,36 @@ struct HomeView: View {
                         }
                     }
                     
+                    // Upcoming Rental Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Upcoming Rental")
+                            .font(.headline)
+                            .foregroundColor(AppColors.textSecondary)
+                        
+                        // TODO: Replace with actual upcoming rental data from reservationViewModel
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("No upcoming rental")
+                                    .font(.title3)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(AppColors.textPrimary)
+                                Text("Your reservations will appear here")
+                                    .font(.subheadline)
+                                    .foregroundColor(AppColors.textSecondary)
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "calendar.badge.clock")
+                                .font(.system(size: 24))
+                                .foregroundColor(AppColors.secondary)
+                        }
+                        .padding()
+                        .background(AppColors.surface)
+                        .cornerRadius(12)
+                        .shadow(color: AppColors.background.opacity(0.5), radius: 8, x: 0, y: 4)
+                    }
+                    
                     // Past Rentals Section
                     Button(action: {
                         showPastRentals = true
