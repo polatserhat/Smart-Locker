@@ -54,7 +54,6 @@ struct HomeView: View {
     @State private var showReservation = false
     @State private var showProfile = false
     @State private var showPlansInfo = false
-    @State private var showPastRentals = false
     @State private var showPayment = false
     @State private var showPaymentConfirmation = false
     @State private var currentRentalTimer: Timer?
@@ -464,39 +463,6 @@ struct HomeView: View {
                         .shadow(color: AppColors.background.opacity(0.5), radius: 8, x: 0, y: 4)
                     }
                     
-                    // Past Rentals Section
-                    Button(action: {
-                        showPastRentals = true
-                    }) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Past Rentals")
-                                .font(.headline)
-                                .foregroundColor(AppColors.textSecondary)
-                            
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("View History")
-                                        .font(.title3)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(AppColors.textPrimary)
-                                    Text("Check your rental history")
-                                        .font(.subheadline)
-                                        .foregroundColor(AppColors.textSecondary)
-                                }
-                                
-                                Spacer()
-                                
-                                Image(systemName: "clock.arrow.circlepath")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(AppColors.secondary)
-                            }
-                            .padding()
-                            .background(AppColors.surface)
-                            .cornerRadius(12)
-                            .shadow(color: AppColors.background.opacity(0.5), radius: 8, x: 0, y: 4)
-                        }
-                    }
-                    
                     // Action Buttons
                     VStack(spacing: 12) {
                         // Direct Rent Button
@@ -554,10 +520,6 @@ struct HomeView: View {
             .fullScreenCover(isPresented: $showPlansInfo) {
                 PlanSelectionView(isInformationOnly: true)
             }
-            .fullScreenCover(isPresented: $showPastRentals) {
-                RentalHistoryView()
-                    .environmentObject(reservationViewModel)
-            }
             .fullScreenCover(isPresented: $showPayment) {
                 Group {
                     if let rental = selectedRental, let location = selectedLocation {
@@ -613,7 +575,6 @@ struct HomeView: View {
                     showReservation = false
                     showProfile = false
                     showPlansInfo = false
-                    showPastRentals = false
                     showPayment = false
                     showPaymentConfirmation = false
                     

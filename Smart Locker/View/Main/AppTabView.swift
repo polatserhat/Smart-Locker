@@ -8,6 +8,7 @@ struct AppTabView: View {
     @EnvironmentObject private var reservationViewModel: ReservationViewModel
     
     @State private var selectedTab = 0
+    @State private var tabScale: CGFloat = 1.0
     
     init() {
         // Configure tab bar appearance for dark mode
@@ -34,10 +35,25 @@ struct AppTabView: View {
         UITabBar.appearance().scrollEdgeAppearance = appearance
     }
     
+    private func animateTabSelection() {
+        withAnimation(.easeInOut(duration: 0.1)) {
+            tabScale = 0.95
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.easeInOut(duration: 0.1)) {
+                tabScale = 1.0
+            }
+        }
+    }
+    
     var body: some View {
         TabView(selection: $selectedTab) {
             // Home Tab
             HomeView()
+                .scaleEffect(selectedTab == 0 ? tabScale : 1.0)
+                .opacity(selectedTab == 0 ? 1.0 : 0.0)
+                .animation(.easeInOut(duration: 0.2), value: selectedTab)
                 .tabItem {
                     Image(systemName: "house.fill")
                     Text("Home")
@@ -46,13 +62,16 @@ struct AppTabView: View {
             
             // Map Tab
             LockerMapView()
+                .scaleEffect(selectedTab == 1 ? tabScale : 1.0)
+                .opacity(selectedTab == 1 ? 1.0 : 0.0)
+                .animation(.easeInOut(duration: 0.2), value: selectedTab)
                 .tabItem {
                     Image(systemName: "map.fill")
                     Text("Find")
                 }
                 .tag(1)
             
-            // Bookings Tab
+            // History Tab
             VStack {
                 if reservationViewModel.currentRentals.isEmpty {
                     RentalHistoryView()
@@ -60,14 +79,20 @@ struct AppTabView: View {
                     ActiveRentalsView()
                 }
             }
+            .scaleEffect(selectedTab == 2 ? tabScale : 1.0)
+            .opacity(selectedTab == 2 ? 1.0 : 0.0)
+            .animation(.easeInOut(duration: 0.2), value: selectedTab)
             .tabItem {
                 Image(systemName: "calendar.badge.clock")
-                Text("Bookings")
+                Text("History")
             }
             .tag(2)
             
             // Profile Tab
             ProfilePageView()
+                .scaleEffect(selectedTab == 3 ? tabScale : 1.0)
+                .opacity(selectedTab == 3 ? 1.0 : 0.0)
+                .animation(.easeInOut(duration: 0.2), value: selectedTab)
                 .tabItem {
                     Image(systemName: "person.fill")
                     Text("Profile")
@@ -75,6 +100,9 @@ struct AppTabView: View {
                 .tag(3)
         }
         .accentColor(AppColors.secondary) // Use the accent color from our theme
+        .onChange(of: selectedTab) { _ in
+            animateTabSelection()
+        }
         .onAppear {
             // If user is already logged in, fetch their rentals
             if let userId = authViewModel.currentUser?.id {

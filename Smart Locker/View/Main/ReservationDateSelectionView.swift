@@ -5,9 +5,11 @@ struct ReservationDateSelectionView: View {
     @EnvironmentObject private var authViewModel: AuthViewModel
     @State private var currentMonth = Date()
     @State private var selectedDates = Set<Date>()
+    @State private var selectedStartTime = Date()
     @State private var showLocationSelection = false
     @State private var error: String?
     @State private var showError = false
+    @State private var navigateToLockerMap = false
     
     private let calendar = Calendar.current
     private let dateFormatter: DateFormatter = {
@@ -15,6 +17,12 @@ struct ReservationDateSelectionView: View {
         formatter.dateFormat = "d"
         return formatter
     }()
+    
+    private var timeFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter
+    }
     
     // Helper function to check if a date is in the past
     private func isDateInPast(_ date: Date) -> Bool {
@@ -41,7 +49,7 @@ struct ReservationDateSelectionView: View {
                 
                 Spacer()
                 
-                Text("Select Dates")
+                Text("Select Date & Time")
                     .font(.title3)
                     .fontWeight(.bold)
                     .foregroundColor(AppColors.textPrimary)
@@ -123,24 +131,64 @@ struct ReservationDateSelectionView: View {
             }
             .padding(.horizontal, 8)
             
+            // Start Time Selection
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Select Start Time")
+                    .font(.headline)
+                    .foregroundColor(AppColors.textPrimary)
+                
+                DatePicker("Start Time", selection: $selectedStartTime, displayedComponents: .hourAndMinute)
+                    .datePickerStyle(.wheel)
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity, maxHeight: 120)
+                    .background(AppColors.surface)
+                    .cornerRadius(10)
+                    .environment(\.locale, Locale(identifier: "en_US"))
+                    .onAppear {
+                        // Configure 15-minute intervals
+                        UIDatePicker.appearance().minuteInterval = 15
+                    }
+            }
+            .padding(.horizontal, 16)
+            
             Spacer()
             
-            // Selected Dates Summary
+            // Selected Dates and Time Summary
             if !selectedDates.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Selected Dates")
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Reservation Summary")
                         .font(.headline)
+                        .foregroundColor(AppColors.textPrimary)
                     
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(Array(selectedDates).sorted(), id: \.self) { date in
-                                Text(date.formatted(.dateTime.day().month().year()))
-                                    .font(.subheadline)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(AppColors.secondary.opacity(0.2))
-                                    .cornerRadius(8)
-                            }
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Selected Dates:")
+                                .font(.subheadline)
+                                .foregroundColor(AppColors.textSecondary)
+                            Spacer()
+                        }
+                        
+                        HStack {
+                            Text(formatSelectedDates())
+                                .font(.body)
+                                .fontWeight(.medium)
+                                .foregroundColor(AppColors.textPrimary)
+                            Spacer()
+                        }
+                        
+                        HStack {
+                            Text("Start Time:")
+                                .font(.subheadline)
+                                .foregroundColor(AppColors.textSecondary)
+                            Spacer()
+                        }
+                        
+                        HStack {
+                            Text(timeFormatter.string(from: selectedStartTime))
+                                .font(.body)
+                                .fontWeight(.medium)
+                                .foregroundColor(AppColors.textPrimary)
+                            Spacer()
                         }
                     }
                 }
@@ -152,33 +200,41 @@ struct ReservationDateSelectionView: View {
             
             // Confirm Button
             Button(action: {
-                showLocationSelection = true
+                // Navigate to LockerMapView with selected dates
+                navigateToLockerMap = true
             }) {
-                Text("Confirm Dates")
+                Text("Continue to Location Selection")
+                    .font(.headline)
                     .fontWeight(.semibold)
-                    .foregroundColor(Color.white)
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(
-                        selectedDates.isEmpty
-                        ? Color.gray
-                        : AppColors.primary
-                    )
+                    .padding(.vertical, 16)
+                    .background(AppColors.secondary)
                     .cornerRadius(12)
             }
-            .disabled(selectedDates.isEmpty)
-            .padding(.bottom, 30)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 32)
         }
         .padding(.horizontal, 24)
         .background(AppColors.background)
-        .fullScreenCover(isPresented: $showLocationSelection) {
+        .navigationDestination(isPresented: $navigateToLockerMap) {
             LockerMapView(reservationDates: selectedDates)
-                .environmentObject(AuthViewModel.shared ?? AuthViewModel())
         }
         .alert("Error", isPresented: $showError) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(error ?? "An error occurred")
+        }
+        .onAppear {
+            // Set default start time to the next available 15-minute slot
+            let calendar = Calendar.current
+            let now = Date()
+            let minutes = calendar.component(.minute, from: now)
+            let roundedMinutes = ((minutes / 15) + 1) * 15
+            
+            if let nextSlot = calendar.date(byAdding: .minute, value: roundedMinutes - minutes, to: now) {
+                selectedStartTime = nextSlot
+            }
         }
     }
     
@@ -207,6 +263,12 @@ struct ReservationDateSelectionView: View {
         if let newDate = calendar.date(byAdding: .month, value: 1, to: currentMonth) {
             currentMonth = newDate
         }
+    }
+    
+    private func formatSelectedDates() -> String {
+        Array(selectedDates).sorted().map { date in
+            date.formatted(.dateTime.day().month().year())
+        }.joined(separator: ", ")
     }
 }
 
