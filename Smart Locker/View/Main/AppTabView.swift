@@ -8,7 +8,7 @@ struct AppTabView: View {
     @EnvironmentObject private var reservationViewModel: ReservationViewModel
     
     @State private var selectedTab = 0
-    @State private var tabScale: CGFloat = 1.0
+    @State private var animationScale: CGFloat = 1.0
     
     init() {
         // Configure tab bar appearance for dark mode
@@ -35,14 +35,14 @@ struct AppTabView: View {
         UITabBar.appearance().scrollEdgeAppearance = appearance
     }
     
-    private func animateTabSelection() {
+    private func animateTabChange() {
         withAnimation(.easeInOut(duration: 0.1)) {
-            tabScale = 0.95
+            animationScale = 0.95
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            withAnimation(.easeInOut(duration: 0.1)) {
-                tabScale = 1.0
+            withAnimation(.easeInOut(duration: 0.2)) {
+                animationScale = 1.0
             }
         }
     }
@@ -51,9 +51,9 @@ struct AppTabView: View {
         TabView(selection: $selectedTab) {
             // Home Tab
             HomeView()
-                .scaleEffect(selectedTab == 0 ? tabScale : 1.0)
+                .scaleEffect(selectedTab == 0 ? animationScale : 1.0)
                 .opacity(selectedTab == 0 ? 1.0 : 0.0)
-                .animation(.easeInOut(duration: 0.2), value: selectedTab)
+                .animation(.easeInOut(duration: 0.3), value: selectedTab)
                 .tabItem {
                     Image(systemName: "house.fill")
                     Text("Home")
@@ -62,9 +62,9 @@ struct AppTabView: View {
             
             // Map Tab
             LockerMapView()
-                .scaleEffect(selectedTab == 1 ? tabScale : 1.0)
+                .scaleEffect(selectedTab == 1 ? animationScale : 1.0)
                 .opacity(selectedTab == 1 ? 1.0 : 0.0)
-                .animation(.easeInOut(duration: 0.2), value: selectedTab)
+                .animation(.easeInOut(duration: 0.3), value: selectedTab)
                 .tabItem {
                     Image(systemName: "map.fill")
                     Text("Find")
@@ -79,9 +79,9 @@ struct AppTabView: View {
                     ActiveRentalsView()
                 }
             }
-            .scaleEffect(selectedTab == 2 ? tabScale : 1.0)
+            .scaleEffect(selectedTab == 2 ? animationScale : 1.0)
             .opacity(selectedTab == 2 ? 1.0 : 0.0)
-            .animation(.easeInOut(duration: 0.2), value: selectedTab)
+            .animation(.easeInOut(duration: 0.3), value: selectedTab)
             .tabItem {
                 Image(systemName: "calendar.badge.clock")
                 Text("History")
@@ -90,9 +90,9 @@ struct AppTabView: View {
             
             // Profile Tab
             ProfilePageView()
-                .scaleEffect(selectedTab == 3 ? tabScale : 1.0)
+                .scaleEffect(selectedTab == 3 ? animationScale : 1.0)
                 .opacity(selectedTab == 3 ? 1.0 : 0.0)
-                .animation(.easeInOut(duration: 0.2), value: selectedTab)
+                .animation(.easeInOut(duration: 0.3), value: selectedTab)
                 .tabItem {
                     Image(systemName: "person.fill")
                     Text("Profile")
@@ -101,7 +101,7 @@ struct AppTabView: View {
         }
         .accentColor(AppColors.secondary) // Use the accent color from our theme
         .onChange(of: selectedTab) { _ in
-            animateTabSelection()
+            animateTabChange()
         }
         .onAppear {
             // If user is already logged in, fetch their rentals
