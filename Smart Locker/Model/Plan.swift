@@ -9,7 +9,7 @@ enum PlanTier: String, CaseIterable, Identifiable, Codable {
     var description: String {
         switch self {
         case .premium:
-            return "Enhanced security features with insurance coverage for your belongings."
+            return "Improved user experience with smart reminders, remote access, and priority support."
         case .standard:
             return "Basic secure storage with digital access."
         }
@@ -19,9 +19,9 @@ enum PlanTier: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .premium:
             return [
-                "Real-time locker monitoring",
-                "Suspicious activity alerts",
-                "Up to €500 insurance coverage",
+                "Remote locker control",
+                "Usage Time Reminders",
+                "Insurance coverage",
                 "Priority customer support"
             ]
         case .standard:

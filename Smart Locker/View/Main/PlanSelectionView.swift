@@ -266,7 +266,7 @@ struct PlanSelectionView: View {
                     .font(.headline)
                     .foregroundColor(tierTextColor(tier))
                 
-                Text(tier == .premium ? "Enhanced Security" : "Basic Access")
+                Text(tier == .premium ? "Enhanced Experience" : "Basic Access")
                     .font(.caption)
                     .foregroundColor(selectedTier == tier ? AppColors.textPrimary.opacity(0.8) : AppColors.textSecondary)
             }
