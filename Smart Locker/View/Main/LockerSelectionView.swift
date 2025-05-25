@@ -26,7 +26,7 @@ struct LockerSizeCard: View {
                     .foregroundColor(AppColors.textSecondary)
                 
                 // Price
-                Text("$\(String(format: "%.2f", size.basePrice))")
+                Text("€\(String(format: "%.2f", size.basePrice))")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(Color.white)
                     .padding(.vertical, 8)

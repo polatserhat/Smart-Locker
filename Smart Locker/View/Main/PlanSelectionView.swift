@@ -322,16 +322,18 @@ struct PlanSelectionView: View {
     private func durationPriceView(for duration: PlanDuration) -> some View {
         VStack(alignment: .trailing, spacing: 4) {
             if duration == .hourly {
-                Text("$\(String(format: "%.2f", selectedTier.hourlyRate))")
-                    .font(.headline)
-                    .foregroundColor(selectedTier == .premium ? AppColors.secondary : Color.blue)
+                Text("€\(String(format: "%.2f", selectedTier.hourlyRate))")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(AppColors.secondary)
                 Text("per hour")
                     .font(.caption)
                     .foregroundColor(AppColors.textSecondary)
             } else {
-                Text("$\(String(format: "%.2f", duration.getPrice(for: selectedTier)))")
-                    .font(.headline)
-                    .foregroundColor(selectedTier == .premium ? AppColors.secondary : Color.blue)
+                Text("€\(String(format: "%.2f", duration.getPrice(for: selectedTier)))")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundColor(AppColors.textPrimary)
                 
                 Text("per day")
                     .font(.caption)
@@ -368,10 +370,10 @@ struct PlanSelectionView: View {
                     Text("Rate")
                         .font(.subheadline)
                         .foregroundColor(AppColors.textSecondary)
-                    Text("$\(String(format: "%.2f", selectedTier.hourlyRate))/hour")
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                        .foregroundColor(selectedTier == .premium ? AppColors.secondary : Color.blue)
+                    Text("€\(String(format: "%.2f", selectedTier.hourlyRate))/hour")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(AppColors.textSecondary)
                 }
                 
                 Spacer()
@@ -419,10 +421,10 @@ struct PlanSelectionView: View {
                 .font(.headline)
                 .foregroundColor(AppColors.textPrimary)
             Spacer()
-            Text("$\(String(format: "%.2f", totalPrice))")
-                .font(.title3)
+            Text("€\(String(format: "%.2f", totalPrice))")
+                .font(.title2)
                 .fontWeight(.bold)
-                .foregroundColor(selectedTier == .premium ? AppColors.secondary : Color.blue)
+                .foregroundColor(AppColors.secondary)
         }
         .padding()
         .background(AppColors.surface)

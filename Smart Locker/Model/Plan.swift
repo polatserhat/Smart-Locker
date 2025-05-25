@@ -21,7 +21,7 @@ enum PlanTier: String, CaseIterable, Identifiable, Codable {
             return [
                 "Real-time locker monitoring",
                 "Suspicious activity alerts",
-                "Up to $500 insurance coverage",
+                "Up to €500 insurance coverage",
                 "Priority customer support"
             ]
         case .standard:

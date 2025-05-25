@@ -98,7 +98,7 @@ struct PaymentView: View {
                             }
                             
                             OrderDetailRow(title: isCompletingExistingRental ? "Usage Time" : "Duration", value: duration)
-                            OrderDetailRow(title: "Total Amount", value: "$\(String(format: "%.2f", totalPrice))", isTotal: true)
+                            OrderDetailRow(title: "Total Amount", value: "€\(String(format: "%.2f", totalPrice))", isTotal: true)
                         }
                     }
                     .padding()

@@ -179,7 +179,7 @@ struct HomeView: View {
                 formatter.numberStyle = .currency
                 formatter.maximumFractionDigits = 2
                 
-                let priceString = formatter.string(from: NSNumber(value: finalPrice)) ?? "$\(String(format: "%.2f", finalPrice))"
+                let priceString = formatter.string(from: NSNumber(value: finalPrice)) ?? "€\(String(format: "%.2f", finalPrice))"
                 let hoursString = String(format: "%.1f", totalHours)
                 
                 // Perform the update operations

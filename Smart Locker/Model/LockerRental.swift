@@ -38,9 +38,9 @@ enum LockerSize: String, Codable {
     
     var basePrice: Double {
         switch self {
-        case .small: return 0.10
-        case .medium: return 0.15
-        case .large: return 0.20
+        case .small: return 0.50
+        case .medium: return 0.75
+        case .large: return 1.00
         }
     }
 }

@@ -145,16 +145,20 @@ struct LockerConfirmationView: View {
                         Text("Base Price")
                             .foregroundColor(AppColors.textPrimary)
                         Spacer()
-                        Text("$\(String(format: "%.2f", basePrice))")
-                            .foregroundColor(AppColors.textPrimary)
+                        Text("€\(String(format: "%.2f", basePrice))")
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundColor(AppColors.secondary)
                     }
                     
                     HStack {
                         Text("Tax (10%)")
                             .foregroundColor(AppColors.textPrimary)
                         Spacer()
-                        Text("$\(String(format: "%.2f", basePrice * 0.1))")
-                            .foregroundColor(AppColors.textPrimary)
+                        Text("€\(String(format: "%.2f", basePrice * 0.1))")
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundColor(AppColors.secondary)
                     }
                     
                     Divider()
@@ -165,8 +169,9 @@ struct LockerConfirmationView: View {
                             .fontWeight(.semibold)
                             .foregroundColor(AppColors.textPrimary)
                         Spacer()
-                        Text("$\(String(format: "%.2f", totalPrice))")
-                            .fontWeight(.semibold)
+                        Text("€\(String(format: "%.2f", totalPrice))")
+                            .font(.title2)
+                            .fontWeight(.bold)
                             .foregroundColor(AppColors.secondary)
                     }
                 }

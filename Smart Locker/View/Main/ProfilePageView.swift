@@ -104,7 +104,7 @@ struct ProfilePageView: View {
                     VStack(spacing: 24) {
                         // Account Section
                         SettingsSection(title: "Account") {
-                            SettingsRow(icon: "wallet.pass.fill", title: "Balance", value: "$200.00")
+                            SettingsRow(icon: "wallet.pass.fill", title: "Balance", value: "€200.00")
                             
                             NavigationLink {
                                 Text("QR Code Screen")

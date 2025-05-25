@@ -126,7 +126,7 @@ struct PaymentConfirmationView: View {
                             .font(.headline)
                             .foregroundColor(AppColors.textSecondary)
                         
-                        Text("$\(String(format: "%.2f", rental.size.basePrice))/hour")
+                        Text("€\(String(format: "%.2f", rental.size.basePrice))/hour")
                             .font(.title3)
                             .fontWeight(.semibold)
                             .foregroundColor(AppColors.secondary)
@@ -167,7 +167,7 @@ struct PaymentConfirmationView: View {
                                 Image(systemName: "dollarsign.circle")
                                     .foregroundColor(AppColors.secondary)
                                 
-                                Text("$\(String(format: "%.2f", totalPrice))")
+                                Text("€\(String(format: "%.2f", totalPrice))")
                                     .font(.title3)
                                     .fontWeight(.semibold)
                                     .foregroundColor(AppColors.textPrimary)
