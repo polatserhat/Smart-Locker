@@ -11,14 +11,10 @@ struct OnboardingView: View {
     @State private var shouldShowLogin = false
     
     let steps = [
-        OnboardingStep(
-            image: "smartlocker.logo",
-            title: "Smart Lockers For Travelers",
-            description: ""
-        ),
+       
         OnboardingStep(
             image: "onboarding1",
-            title: "Easy Drop-off",
+            title: "Smart Lockers For Travelers",
             description: "Effortlessly store your luggage using our secure lockers located at key transportation points."
         ),
         OnboardingStep(
