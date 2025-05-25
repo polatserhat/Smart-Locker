@@ -51,19 +51,23 @@ struct OnboardingView: View {
                                         .resizable()
                                         .scaledToFit()
                                         .frame(width: geometry.size.width * 0.85)
-                                        .padding(.bottom, 8)
+                                        .padding(.bottom, 20)
 
-                                    Text(steps[index].title)
-                                        .font(.title2)
-                                        .fontWeight(.bold)
-                                        .multilineTextAlignment(.center)
-                                        .frame(maxWidth: .infinity)
+                                    VStack(spacing: 8) {
+                                        Text(steps[index].title)
+                                            .font(.title2)
+                                            .fontWeight(.bold)
+                                            .foregroundColor(.black)
+                                            .multilineTextAlignment(.center)
+                                            .frame(maxWidth: .infinity)
 
-                                    Text("Your Luggage, Your Freedom")
-                                        .font(.subheadline)
-                                        .foregroundColor(.gray)
-                                        .multilineTextAlignment(.center)
-                                        .frame(maxWidth: .infinity)
+                                        Text("Your Luggage, Your Freedom")
+                                            .font(.subheadline)
+                                            .foregroundColor(.gray)
+                                            .multilineTextAlignment(.center)
+                                            .frame(maxWidth: .infinity)
+                                    }
+                                    .padding(.horizontal, 32)
                                 } else {
                                     ZStack(alignment: .bottom) {
                                         Image(steps[index].image)
@@ -77,11 +81,13 @@ struct OnboardingView: View {
                                             Text(steps[index].title)
                                                 .font(.title3)
                                                 .fontWeight(.semibold)
+                                                .foregroundColor(.black)
                                                 .multilineTextAlignment(.center)
                                                 .frame(maxWidth: .infinity)
 
                                             Text(steps[index].description)
                                                 .font(.body)
+                                                .foregroundColor(.gray)
                                                 .multilineTextAlignment(.center)
                                                 .frame(maxWidth: .infinity)
                                         }
@@ -126,11 +132,7 @@ struct OnboardingView: View {
                 .padding(.bottom, 30)
             }
             .navigationBarHidden(true)
-            .background(
-                LinearGradient(gradient: Gradient(colors: [Color(.systemBackground), Color(.secondarySystemBackground)]),
-                               startPoint: .top,
-                               endPoint: .bottom)
-            )
+            .background(Color.white)
         }
         .navigationViewStyle(StackNavigationViewStyle())
         .fullScreenCover(isPresented: $shouldShowLogin) {
