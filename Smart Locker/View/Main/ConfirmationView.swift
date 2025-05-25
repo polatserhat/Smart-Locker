@@ -11,6 +11,7 @@ struct PaymentConfirmationView: View {
     @State private var isCreatingRental = false
     @State private var isCompletingRental = false
     @State private var showSuccess = false
+    @State private var showPayment = false
     @State private var error: String?
     @State private var showError = false
     
@@ -24,12 +25,24 @@ struct PaymentConfirmationView: View {
     
     // Dynamic title based on rental state
     private var pageTitle: String {
-        return isCompletingExistingRental ? "Complete Rental" : "Start Rental"
+        if isCompletingExistingRental {
+            return "Complete Rental"
+        } else if rental.rentalType == .reservation {
+            return "Confirm Reservation"
+        } else {
+            return "Start Rental"
+        }
     }
     
     // Dynamic button text based on rental state
     private var actionButtonText: String {
-        return isCompletingExistingRental ? "COMPLETE RENTAL" : "START RENTAL"
+        if isCompletingExistingRental {
+            return "COMPLETE RENTAL"
+        } else if rental.rentalType == .reservation {
+            return "CONFIRM RESERVATION"
+        } else {
+            return "START RENTAL"
+        }
     }
 
     var body: some View {
@@ -66,13 +79,19 @@ struct PaymentConfirmationView: View {
                     .foregroundColor(AppColors.secondary)
                     .padding(.bottom, 10)
                 
-                Text(isCompletingExistingRental ? "Rental Completion" : "Hourly Rental Ready")
+                Text(isCompletingExistingRental ? "Rental Completion" : (rental.rentalType == .reservation ? "Reservation Confirmation" : "Hourly Rental Ready"))
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(AppColors.textPrimary)
                 
                 if isCompletingExistingRental {
                     Text("Your rental is complete. Click 'Complete Rental' to finalize and process payment.")
+                        .multilineTextAlignment(.center)
+                        .font(.subheadline)
+                        .foregroundColor(AppColors.textSecondary)
+                        .padding(.horizontal)
+                } else if rental.rentalType == .reservation {
+                    Text("Your reservation is ready. Click 'Confirm Reservation' to proceed to payment.")
                         .multilineTextAlignment(.center)
                         .font(.subheadline)
                         .foregroundColor(AppColors.textSecondary)
@@ -175,6 +194,48 @@ struct PaymentConfirmationView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                } else if rental.rentalType == .reservation {
+                    // Reservation date and time
+                    if let reservationDate = rental.reservationDate {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Reservation Date & Time")
+                                .font(.headline)
+                                .foregroundColor(AppColors.textSecondary)
+                            
+                            HStack {
+                                Image(systemName: "calendar")
+                                    .foregroundColor(AppColors.secondary)
+                                
+                                Text(reservationDate.formatted(.dateTime.weekday().month().day().hour().minute()))
+                                    .font(.title3)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(AppColors.textPrimary)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    
+                    // Prepayment amount
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Prepayment Amount")
+                            .font(.headline)
+                            .foregroundColor(AppColors.textSecondary)
+                        
+                        HStack {
+                            Image(systemName: "creditcard")
+                                .foregroundColor(AppColors.secondary)
+                            
+                            Text("€\(String(format: "%.2f", rental.size.basePrice * 2.0))")
+                                .font(.title3)
+                                .fontWeight(.semibold)
+                                .foregroundColor(AppColors.textPrimary)
+                            
+                            Text("(2x hourly rate)")
+                                .font(.caption)
+                                .foregroundColor(AppColors.textSecondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
                     // Start time for new rental
                     VStack(alignment: .leading, spacing: 4) {
@@ -213,6 +274,11 @@ struct PaymentConfirmationView: View {
                         .multilineTextAlignment(.center)
                         .font(.subheadline)
                         .foregroundColor(AppColors.textSecondary)
+                } else if rental.rentalType == .reservation {
+                    Text("You will be charged based on the actual usage time when you end the rental. The hourly rate will be applied to calculate the final amount.")
+                        .multilineTextAlignment(.center)
+                        .font(.subheadline)
+                        .foregroundColor(AppColors.textSecondary)
                 } else {
                     Text("You will be charged based on the actual usage time when you end the rental. The hourly rate will be applied to calculate the final amount.")
                         .multilineTextAlignment(.center)
@@ -229,6 +295,9 @@ struct PaymentConfirmationView: View {
             Button(action: {
                 if isCompletingExistingRental {
                     completeRental()
+                } else if rental.rentalType == .reservation {
+                    // For reservations, show payment directly
+                    showPayment = true
                 } else {
                     // We're now using the PlanSelectionView for starting rentals
                     // This should never get called now
@@ -274,6 +343,10 @@ struct PaymentConfirmationView: View {
                 totalAmount: rental.totalPrice,
                 hourlyRate: rental.size.basePrice
             )
+        }
+        .fullScreenCover(isPresented: $showPayment) {
+            PaymentView(rental: rental, location: location)
+                .environmentObject(authViewModel)
         }
     }
     
@@ -337,6 +410,11 @@ struct PaymentConfirmationView: View {
                     print("Successfully decremented available locker count for \(size)")
                 }
             }
+    }
+    
+    private func showPaymentView() {
+        // This method is no longer needed, but keeping for compatibility
+        showPayment = true
     }
 }
 

@@ -117,8 +117,6 @@ struct PlanSelectionView: View {
                     
                     if selectedDuration == .hourly {
                         hourlyRentalInfoSection
-                    } else if selectedDuration == .daily {
-                        dailyRentalInfoSection
                     }
                     featuresSection
                     
@@ -141,6 +139,22 @@ struct PlanSelectionView: View {
         }
         .edgesIgnoringSafeArea(.bottom)
         .background(AppColors.background)
+        .fullScreenCover(isPresented: $showConfirmation) {
+            if rental.rentalType == .reservation {
+                // Create a new rental with the reservation date from the original rental
+                let reservationRental = LockerRental(
+                    id: UUID().uuidString,
+                    shopName: rental.shopName,
+                    size: rental.size,
+                    rentalType: .reservation,
+                    reservationDate: rental.reservationDate,
+                    totalPrice: selectedTier.hourlyRate * 2.0, // 2x hourly rate for prepayment
+                    plan: Plan(tier: selectedTier, duration: selectedDuration)
+                )
+                PaymentConfirmationView(rental: reservationRental, location: location)
+                    .environmentObject(authViewModel)
+            }
+        }
         .fullScreenCover(isPresented: $showRentalSuccess) {
             RentalSuccessView(
                 isCompletingRental: false,
@@ -275,11 +289,8 @@ struct PlanSelectionView: View {
                 .foregroundColor(AppColors.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
-            VStack(spacing: 12) {
-                ForEach(PlanDuration.allCases) { duration in
-                    durationButton(for: duration)
-                }
-            }
+            // Only show hourly option
+            durationButton(for: .hourly)
         }
     }
     
@@ -303,7 +314,16 @@ struct PlanSelectionView: View {
                 
                 Spacer()
                 
-                durationPriceView(for: duration)
+                // Only show hourly pricing
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("€\(String(format: "%.2f", selectedTier.hourlyRate))")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(AppColors.secondary)
+                    Text("per hour")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                }
             }
             .padding()
             .background(AppColors.surface)
@@ -316,29 +336,6 @@ struct PlanSelectionView: View {
                         lineWidth: durationBorderWidth(duration)
                     )
             )
-        }
-    }
-    
-    private func durationPriceView(for duration: PlanDuration) -> some View {
-        VStack(alignment: .trailing, spacing: 4) {
-            if duration == .hourly {
-                Text("€\(String(format: "%.2f", selectedTier.hourlyRate))")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(AppColors.secondary)
-                Text("per hour")
-                    .font(.caption)
-                    .foregroundColor(AppColors.textSecondary)
-            } else {
-                Text("€\(String(format: "%.2f", duration.getPrice(for: selectedTier)))")
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .foregroundColor(AppColors.textPrimary)
-                
-                Text("per day")
-                    .font(.caption)
-                    .foregroundColor(AppColors.textSecondary)
-            }
         }
     }
     
@@ -389,49 +386,6 @@ struct PlanSelectionView: View {
         }
     }
     
-    private var dailyRentalInfoSection: some View {
-        VStack(spacing: 12) {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "info.circle.fill")
-                    .foregroundColor(selectedTier == .premium ? AppColors.secondary : Color.blue)
-                    .font(.system(size: 16))
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("24-Hour Rental Period")
-                        .font(.headline)
-                        .foregroundColor(AppColors.textPrimary)
-                    Text("Your rental will start immediately and end after 24 hours")
-                        .font(.subheadline)
-                        .foregroundColor(AppColors.textSecondary)
-                }
-            }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(AppColors.surface)
-            .cornerRadius(12)
-            .shadow(color: AppColors.background.opacity(0.3), radius: 5)
-            
-            totalPriceView
-        }
-    }
-    
-    private var totalPriceView: some View {
-        HStack {
-            Text("Total Price:")
-                .font(.headline)
-                .foregroundColor(AppColors.textPrimary)
-            Spacer()
-            Text("€\(String(format: "%.2f", totalPrice))")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(AppColors.secondary)
-        }
-        .padding()
-        .background(AppColors.surface)
-        .cornerRadius(12)
-        .shadow(color: AppColors.background.opacity(0.3), radius: 5)
-    }
-    
     private var featuresSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("\(selectedTier.rawValue) Plan Features")
@@ -459,7 +413,13 @@ struct PlanSelectionView: View {
     private var bottomButton: some View {
         VStack {
             Button(action: {
-                proceedWithRental()
+                if rental.rentalType == .reservation {
+                    // For reservations, go to ConfirmationView
+                    showConfirmation = true
+                } else {
+                    // For direct rentals, proceed as before
+                    proceedWithRental()
+                }
             }) {
                 HStack {
                     if isProcessing {
@@ -468,7 +428,7 @@ struct PlanSelectionView: View {
                             .padding(.trailing, 8)
                     }
                     
-                    Text(isProcessing ? "Processing..." : "Proceed to Rent")
+                    Text(isProcessing ? "Processing..." : (rental.rentalType == .reservation ? "Proceed to Rent" : "Proceed to Rent"))
                         .fontWeight(.semibold)
                     
                     if !isProcessing {

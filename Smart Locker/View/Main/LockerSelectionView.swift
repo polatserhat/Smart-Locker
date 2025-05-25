@@ -58,6 +58,8 @@ struct LockerSelectionView: View {
     @State private var showPlanSelection = false
     @State private var showPlansInfo = false
     @State private var showSizeSelectionHint = false
+    @State private var showPaymentForReservation = false
+    @State private var reservationRental: LockerRental?
     
     let location: LockerLocation
     let rentalType: RentalType
@@ -243,6 +245,18 @@ struct LockerSelectionView: View {
         .fullScreenCover(isPresented: $showPlansInfo) {
             PlanSelectionView(isInformationOnly: true)
                 .environmentObject(AuthViewModel.shared ?? AuthViewModel())
+        }
+        .fullScreenCover(isPresented: $showPaymentForReservation) {
+            if let rental = reservationRental {
+                PaymentView(rental: rental, location: location)
+                    .environmentObject(AuthViewModel.shared ?? AuthViewModel())
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowPaymentForReservation"))) { notification in
+            if let rental = notification.object as? LockerRental {
+                reservationRental = rental
+                showPaymentForReservation = true
+            }
         }
     }
 }

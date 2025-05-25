@@ -54,16 +54,34 @@ struct PaymentView: View {
         if isCompletingExistingRental {
             return rental.totalPrice ?? 0
         }
-        // For new rentals, calculate based on plan
+        
+        // For reservations, charge 2x hourly rate as prepayment
+        if rental.rentalType == .reservation {
+            return rental.size.basePrice * 2.0
+        }
+        
+        // For new direct rentals, calculate based on plan
         return rental.totalPrice ?? (rental.plan?.price ?? rental.size.basePrice) * 1.1
     }
     
     private var checkoutTitle: String {
-        return isCompletingExistingRental ? "Complete Payment" : "Secure Checkout"
+        if isCompletingExistingRental {
+            return "Complete Payment"
+        } else if rental.rentalType == .reservation {
+            return "Reservation Prepayment"
+        } else {
+            return "Secure Checkout"
+        }
     }
     
     private var checkoutSubtitle: String {
-        return isCompletingExistingRental ? "Complete your rental payment" : "Complete your rental payment"
+        if isCompletingExistingRental {
+            return "Complete your rental payment"
+        } else if rental.rentalType == .reservation {
+            return "Pay 2x hourly rate to secure your reservation"
+        } else {
+            return "Complete your rental payment"
+        }
     }
     
     var body: some View {
@@ -95,6 +113,11 @@ struct PaymentView: View {
                             
                             if !isCompletingExistingRental, let plan = rental.plan {
                                 OrderDetailRow(title: "Selected Plan", value: "\(plan.tier.rawValue) - \(plan.duration.rawValue)")
+                            }
+                            
+                            if rental.rentalType == .reservation {
+                                OrderDetailRow(title: "Prepayment", value: "2x Hourly Rate")
+                                OrderDetailRow(title: "Hourly Rate", value: "€\(String(format: "%.2f", rental.size.basePrice))")
                             }
                             
                             OrderDetailRow(title: isCompletingExistingRental ? "Usage Time" : "Duration", value: duration)
@@ -313,9 +336,26 @@ struct PaymentView: View {
         // Simulate payment processing
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             isProcessing = false
-            // Show confirmation screen after payment is processed
-            showConfirmation = true
+            
+            if rental.rentalType == .reservation {
+                // For reservations, create the reservation and go back to HomeView
+                createReservation()
+            } else {
+                // For direct rentals, show confirmation screen after payment is processed
+                showConfirmation = true
+            }
         }
+    }
+    
+    private func createReservation() {
+        // Create reservation in Firebase (simplified for demo)
+        // In a real app, this would create a proper reservation document
+        
+        // Post notification to refresh home view
+        NotificationCenter.default.post(name: Notification.Name("ReservationCreated"), object: rental)
+        
+        // Dismiss to home
+        NotificationCenter.default.post(name: Notification.Name("DismissToRoot"), object: nil)
     }
 }
 

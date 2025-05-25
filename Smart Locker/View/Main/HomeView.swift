@@ -62,6 +62,7 @@ struct HomeView: View {
     @State private var selectedRental: LockerRental?
     @State private var selectedLocation: LockerLocation?
     @State private var localProfileImage: UIImage? = nil
+    @State private var upcomingReservations: [LockerRental] = []
     @EnvironmentObject private var authViewModel: AuthViewModel
     @EnvironmentObject private var reservationViewModel: ReservationViewModel
     
@@ -435,32 +436,90 @@ struct HomeView: View {
                     
                     // Upcoming Rental Section
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Upcoming Rental")
+                        Text("Upcoming Reservation")
                             .font(.headline)
                             .foregroundColor(AppColors.textSecondary)
                         
-                        // TODO: Replace with actual upcoming rental data from reservationViewModel
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("No upcoming rental")
-                                    .font(.title3)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(AppColors.textPrimary)
-                                Text("Your reservations will appear here")
-                                    .font(.subheadline)
-                                    .foregroundColor(AppColors.textSecondary)
+                        if let upcomingReservation = upcomingReservations.first {
+                            VStack(spacing: 16) {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(upcomingReservation.shopName)
+                                            .font(.title3)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(AppColors.textPrimary)
+                                        Text("\(upcomingReservation.size.rawValue) Locker")
+                                            .font(.subheadline)
+                                            .foregroundColor(AppColors.textSecondary)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    VStack(alignment: .trailing, spacing: 4) {
+                                        if let reservationDate = upcomingReservation.reservationDate {
+                                            Text(reservationDate.formatted(.dateTime.month().day()))
+                                                .font(.headline)
+                                                .foregroundColor(AppColors.secondary)
+                                            Text(reservationDate.formatted(.dateTime.hour().minute()))
+                                                .font(.caption)
+                                                .foregroundColor(AppColors.textSecondary)
+                                        }
+                                    }
+                                }
+                                
+                                HStack(spacing: 12) {
+                                    Button(action: {
+                                        cancelReservation(upcomingReservation)
+                                    }) {
+                                        Text("Cancel Reservation")
+                                            .font(.subheadline)
+                                            .foregroundColor(AppColors.error)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 12)
+                                            .background(AppColors.error.opacity(0.1))
+                                            .cornerRadius(8)
+                                    }
+                                    
+                                    Button(action: {
+                                        startReservation(upcomingReservation)
+                                    }) {
+                                        Text("Start Rental")
+                                            .font(.subheadline)
+                                            .foregroundColor(.white)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 12)
+                                            .background(AppColors.secondary)
+                                            .cornerRadius(8)
+                                    }
+                                }
                             }
-                            
-                            Spacer()
-                            
-                            Image(systemName: "calendar.badge.clock")
-                                .font(.system(size: 24))
-                                .foregroundColor(AppColors.secondary)
+                            .padding()
+                            .background(AppColors.surface)
+                            .cornerRadius(12)
+                            .shadow(color: AppColors.background.opacity(0.5), radius: 8, x: 0, y: 4)
+                        } else {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("No upcoming reservation")
+                                        .font(.title3)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(AppColors.textPrimary)
+                                    Text("Your reservations will appear here")
+                                        .font(.subheadline)
+                                        .foregroundColor(AppColors.textSecondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "calendar.badge.clock")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(AppColors.secondary)
+                            }
+                            .padding()
+                            .background(AppColors.surface)
+                            .cornerRadius(12)
+                            .shadow(color: AppColors.background.opacity(0.5), radius: 8, x: 0, y: 4)
                         }
-                        .padding()
-                        .background(AppColors.surface)
-                        .cornerRadius(12)
-                        .shadow(color: AppColors.background.opacity(0.5), radius: 8, x: 0, y: 4)
                     }
                     
                     // Action Buttons
@@ -599,6 +658,12 @@ struct HomeView: View {
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ProfileImageUpdated"))) { _ in
                 loadProfileImage()
             }
+            // Listen for reservation created
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ReservationCreated"))) { notification in
+                if let rental = notification.object as? LockerRental {
+                    upcomingReservations.append(rental)
+                }
+            }
         }
         .preferredColorScheme(.dark)
     }
@@ -606,6 +671,34 @@ struct HomeView: View {
     // MARK: - Profile Image Helper
     private func loadProfileImage() {
         localProfileImage = UserDefaults.getProfileImage(for: authViewModel.currentUser?.id)
+    }
+    
+    // MARK: - Reservation Management
+    private func cancelReservation(_ reservation: LockerRental) {
+        // Remove from upcoming reservations
+        upcomingReservations.removeAll { $0.id == reservation.id }
+        
+        // In a real app, this would also cancel the reservation in Firebase
+        print("Cancelled reservation: \(reservation.id)")
+    }
+    
+    private func startReservation(_ reservation: LockerRental) {
+        // Convert reservation to active rental
+        var activeRental = reservation
+        activeRental.startTime = Date()
+        activeRental.status = .active
+        
+        // Remove from upcoming reservations
+        upcomingReservations.removeAll { $0.id == reservation.id }
+        
+        // Add to current rentals (this would normally be handled by the view model)
+        // For demo purposes, we'll simulate this
+        print("Started reservation: \(reservation.id)")
+        
+        // Refresh data
+        if let userId = authViewModel.currentUser?.id {
+            reservationViewModel.fetchRentals(for: userId)
+        }
     }
 }
 
