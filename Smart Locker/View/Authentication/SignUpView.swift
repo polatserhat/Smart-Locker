@@ -34,12 +34,12 @@ struct SignUpView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             
-            VStack(spacing: 20) {
-                InputField(title: "NAME", text: $name)
-                InputField(title: "EMAIL", text: $email)
-                InputField(title: "PASSWORD", text: $password, isSecure: true)
+            VStack(spacing: 12) {
+                CompactInputField(title: "NAME", text: $name, keyboardType: .namePhonePad)
+                CompactInputField(title: "EMAIL", text: $email, keyboardType: .emailAddress)
+                CompactInputField(title: "PASSWORD", text: $password, isSecure: true)
             }
-            .padding(.top, 20)
+            .padding(.top, 16)
             
             if let errorMessage = authViewModel.errorMessage {
                 Text(errorMessage)

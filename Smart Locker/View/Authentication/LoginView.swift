@@ -15,31 +15,40 @@ struct LoginView: View {
                 Text("Welcome\nBack!")
                     .font(.largeTitle)
                     .fontWeight(.bold)
+                    .foregroundColor(AppColors.textPrimary)
                 
                 Text("Sign in to continue")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundColor(AppColors.textSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, 60)
             
             // Login Form
-            VStack(spacing: 20) {
-                InputField(title: "EMAIL", text: $email)
-                InputField(title: "PASSWORD", text: $password, isSecure: true)
+            VStack(spacing: 12) {
+                CompactInputField(title: "EMAIL", text: $email, keyboardType: .emailAddress)
+                CompactInputField(title: "PASSWORD", text: $password, isSecure: true)
                 
                 // Forgot Password
                 Button(action: {
                     shouldShowForgotPassword = true
                 }) {
                     Text("Forgot Password?")
-                        .font(.subheadline)
-                        .foregroundColor(.black)
+                        .font(.caption)
+                        .foregroundColor(AppColors.secondary)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                 }
-                .padding(.top, 8)
+                .padding(.top, 4)
             }
-            .padding(.top, 40)
+            .padding(.top, 32)
+            
+            // Error Message
+            if let errorMessage = authViewModel.errorMessage {
+                Text(errorMessage)
+                    .font(.caption)
+                    .foregroundColor(AppColors.error)
+                    .padding(.top, 8)
+            }
             
             Spacer()
             
@@ -48,35 +57,93 @@ struct LoginView: View {
                 Button(action: {
                     authViewModel.signIn(email: email, password: password)
                 }) {
-                    Text("Sign In")
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.black)
-                        .cornerRadius(12)
+                    HStack {
+                        if authViewModel.isLoading {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(0.8)
+                        } else {
+                            Text("Sign In")
+                                .fontWeight(.semibold)
+                        }
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(AppColors.secondary)
+                    .cornerRadius(12)
                 }
+                .disabled(authViewModel.isLoading)
                 
                 // Sign Up Link
-                HStack(spacing: 4) {
-                    Text("Don't have an account?")
-                        .foregroundColor(.gray)
-                    Button(action: {
-                        shouldShowSignUp = true
-                    }) {
+                Button(action: {
+                    shouldShowSignUp = true
+                }) {
+                    HStack(spacing: 4) {
+                        Text("Don't have an account?")
+                            .foregroundColor(AppColors.textSecondary)
                         Text("Sign Up")
                             .fontWeight(.medium)
-                            .foregroundColor(.black)
+                            .foregroundColor(AppColors.secondary)
                     }
+                    .font(.subheadline)
                 }
-                .font(.subheadline)
             }
             .padding(.bottom, 30)
         }
         .padding(.horizontal, 24)
-        .background(Color(UIColor.systemBackground))
+        .background(AppColors.background)
+        .preferredColorScheme(.dark)
         .fullScreenCover(isPresented: $shouldShowSignUp) {
             SignUpView()
+                .environmentObject(authViewModel)
+        }
+    }
+}
+
+// Compact Input Field for Login/SignUp
+struct CompactInputField: View {
+    let title: String
+    @Binding var text: String
+    var isSecure: Bool = false
+    var keyboardType: UIKeyboardType = .default
+    @FocusState private var isFocused: Bool
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundColor(isFocused ? AppColors.secondary : AppColors.textSecondary)
+                .animation(.easeInOut(duration: 0.2), value: isFocused)
+            
+            ZStack {
+                // Background with border
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(AppColors.surface)
+                    .frame(height: 44)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(isFocused ? AppColors.secondary : AppColors.textSecondary.opacity(0.2), lineWidth: isFocused ? 1.5 : 0.8)
+                            .animation(.easeInOut(duration: 0.2), value: isFocused)
+                    )
+                
+                if isSecure {
+                    SecureField("Enter \(title.lowercased())", text: $text)
+                        .padding(.horizontal, 12)
+                        .foregroundColor(AppColors.textPrimary)
+                        .focused($isFocused)
+                        .font(.system(size: 16))
+                        .keyboardType(keyboardType)
+                } else {
+                    TextField("Enter \(title.lowercased())", text: $text)
+                        .padding(.horizontal, 12)
+                        .foregroundColor(AppColors.textPrimary)
+                        .focused($isFocused)
+                        .font(.system(size: 16))
+                        .keyboardType(keyboardType)
+                }
+            }
         }
     }
 }
@@ -86,5 +153,6 @@ struct LoginView_Previews: PreviewProvider {
     static var previews: some View {
         LoginView()
             .environmentObject(AuthViewModel())
+            .preferredColorScheme(.dark)
     }
 } 
