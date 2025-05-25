@@ -28,6 +28,7 @@ struct RentalSuccessView: View {
             Text(isCompletingRental ? "Rental Ended!" : "Rental Started!")
                 .font(.title)
                 .fontWeight(.bold)
+                .foregroundColor(AppColors.textPrimary)
             
             // Message
             Text(isCompletingRental ? 
@@ -35,7 +36,7 @@ struct RentalSuccessView: View {
                 "Your locker is now ready to use. You can find your active rental on the home screen.")
                 .multilineTextAlignment(.center)
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(AppColors.textSecondary)
                 .padding(.horizontal, 32)
             
             if let rental = rental {
@@ -44,10 +45,12 @@ struct RentalSuccessView: View {
                     if isCompletingRental {
                         Text("Receipt")
                             .font(.headline)
+                            .foregroundColor(AppColors.textPrimary)
                             .padding(.bottom, 8)
                     } else {
                         Text("Rental Details")
                             .font(.headline)
+                            .foregroundColor(AppColors.textPrimary)
                             .padding(.bottom, 8)
                     }
                     
@@ -56,10 +59,11 @@ struct RentalSuccessView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Location")
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(AppColors.textSecondary)
                             Text(rental.shopName)
                                 .font(.body)
                                 .fontWeight(.medium)
+                                .foregroundColor(AppColors.textPrimary)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         
@@ -70,10 +74,11 @@ struct RentalSuccessView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Locker Size")
                                     .font(.subheadline)
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(AppColors.textSecondary)
                                 Text(rental.size.rawValue)
                                     .font(.body)
                                     .fontWeight(.medium)
+                                    .foregroundColor(AppColors.textPrimary)
                             }
                             
                             Spacer()
@@ -82,7 +87,7 @@ struct RentalSuccessView: View {
                                 VStack(alignment: .trailing, spacing: 4) {
                                     Text("Rate")
                                         .font(.subheadline)
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(AppColors.textSecondary)
                                     Text("$\(String(format: "%.2f", rate))/hour")
                                         .font(.body)
                                         .fontWeight(.medium)
@@ -99,10 +104,11 @@ struct RentalSuccessView: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Duration")
                                         .font(.subheadline)
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(AppColors.textSecondary)
                                     Text(duration)
                                         .font(.body)
                                         .fontWeight(.medium)
+                                        .foregroundColor(AppColors.textPrimary)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             }
@@ -112,7 +118,7 @@ struct RentalSuccessView: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Total Amount")
                                         .font(.headline)
-                                        .foregroundColor(.primary)
+                                        .foregroundColor(AppColors.textPrimary)
                                     Text("$\(String(format: "%.2f", amount))")
                                         .font(.title3)
                                         .fontWeight(.bold)
@@ -125,7 +131,7 @@ struct RentalSuccessView: View {
                     }
                 }
                 .padding(24)
-                .background(Color.white)
+                .background(AppColors.surface)
                 .cornerRadius(16)
                 .shadow(color: Color.black.opacity(0.05), radius: 10)
                 .padding(.horizontal, 24)
@@ -144,7 +150,7 @@ struct RentalSuccessView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(AppColors.secondary)
-                    .foregroundColor(AppColors.primary)
+                    .foregroundColor(AppColors.textPrimary)
                     .cornerRadius(12)
             }
             .padding(.horizontal, 24)

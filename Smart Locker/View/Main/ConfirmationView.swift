@@ -49,6 +49,7 @@ struct PaymentConfirmationView: View {
                 Text(pageTitle)
                     .font(.title3)
                     .fontWeight(.bold)
+                    .foregroundColor(AppColors.textPrimary)
                 
                 Spacer()
                 
@@ -68,18 +69,19 @@ struct PaymentConfirmationView: View {
                 Text(isCompletingExistingRental ? "Rental Completion" : "Hourly Rental Ready")
                     .font(.title2)
                     .fontWeight(.bold)
+                    .foregroundColor(AppColors.textPrimary)
                 
                 if isCompletingExistingRental {
                     Text("Your rental is complete. Click 'Complete Rental' to finalize and process payment.")
                         .multilineTextAlignment(.center)
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
                         .padding(.horizontal)
                 } else {
                     Text("Your locker is ready to use. Your rental will begin once you click 'Start Rental' below.")
                         .multilineTextAlignment(.center)
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
                         .padding(.horizontal)
                 }
                 
@@ -90,15 +92,16 @@ struct PaymentConfirmationView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Location")
                         .font(.headline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
                     
                     Text(rental.shopName)
                         .font(.title3)
                         .fontWeight(.semibold)
+                        .foregroundColor(AppColors.textPrimary)
                     
                     Text(location.address)
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
                         .padding(.bottom, 8)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -108,11 +111,12 @@ struct PaymentConfirmationView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Locker Size")
                             .font(.headline)
-                            .foregroundColor(.gray)
+                            .foregroundColor(AppColors.textSecondary)
                         
                         Text(rental.size.rawValue)
                             .font(.title3)
                             .fontWeight(.semibold)
+                            .foregroundColor(AppColors.textPrimary)
                     }
                     
                     Spacer()
@@ -120,7 +124,7 @@ struct PaymentConfirmationView: View {
                     VStack(alignment: .trailing, spacing: 4) {
                         Text("Rate")
                             .font(.headline)
-                            .foregroundColor(.gray)
+                            .foregroundColor(AppColors.textSecondary)
                         
                         Text("$\(String(format: "%.2f", rental.size.basePrice))/hour")
                             .font(.title3)
@@ -136,7 +140,7 @@ struct PaymentConfirmationView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Rental Duration")
                             .font(.headline)
-                            .foregroundColor(.gray)
+                            .foregroundColor(AppColors.textSecondary)
                         
                         let duration = calculateDuration(from: startTime, to: Date())
                         
@@ -147,6 +151,7 @@ struct PaymentConfirmationView: View {
                             Text(duration)
                                 .font(.title3)
                                 .fontWeight(.semibold)
+                                .foregroundColor(AppColors.textPrimary)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -156,7 +161,7 @@ struct PaymentConfirmationView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Total Cost")
                                 .font(.headline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(AppColors.textSecondary)
                             
                             HStack {
                                 Image(systemName: "dollarsign.circle")
@@ -165,6 +170,7 @@ struct PaymentConfirmationView: View {
                                 Text("$\(String(format: "%.2f", totalPrice))")
                                     .font(.title3)
                                     .fontWeight(.semibold)
+                                    .foregroundColor(AppColors.textPrimary)
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -174,7 +180,7 @@ struct PaymentConfirmationView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Start Time")
                             .font(.headline)
-                            .foregroundColor(.gray)
+                            .foregroundColor(AppColors.textSecondary)
                         
                         HStack {
                             Image(systemName: "clock")
@@ -183,13 +189,14 @@ struct PaymentConfirmationView: View {
                             Text(Date(), style: .time)
                                 .font(.title3)
                                 .fontWeight(.semibold)
+                                .foregroundColor(AppColors.textPrimary)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .padding()
-            .background(Color.white)
+            .background(AppColors.surface)
             .cornerRadius(16)
             .shadow(color: Color.black.opacity(0.05), radius: 10)
             
@@ -199,22 +206,22 @@ struct PaymentConfirmationView: View {
             VStack(spacing: 8) {
                 Text("Important Note")
                     .font(.headline)
-                    .foregroundColor(AppColors.primary)
+                    .foregroundColor(AppColors.secondary)
                 
                 if isCompletingExistingRental {
                     Text("Once you complete this rental, your payment method will be charged based on your usage time. The locker will become available for other users.")
                         .multilineTextAlignment(.center)
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
                 } else {
                     Text("You will be charged based on the actual usage time when you end the rental. The hourly rate will be applied to calculate the final amount.")
                         .multilineTextAlignment(.center)
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
                 }
             }
             .padding()
-            .background(Color.white)
+            .background(AppColors.surface)
             .cornerRadius(16)
             .shadow(color: Color.black.opacity(0.05), radius: 10)
             
@@ -243,7 +250,7 @@ struct PaymentConfirmationView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
                 .background(AppColors.secondary)
-                .foregroundColor(AppColors.primary)
+                .foregroundColor(AppColors.textPrimary)
                 .cornerRadius(14)
                 .shadow(color: AppColors.secondary.opacity(0.3), radius: 10, x: 0, y: 5)
             }
@@ -251,7 +258,7 @@ struct PaymentConfirmationView: View {
             .disabled(isCompletingRental)
         }
         .padding(.horizontal, 24)
-        .background(Color(UIColor.systemBackground))
+        .background(AppColors.background)
         .alert(isPresented: $showError) {
             Alert(
                 title: Text("Error"),
