@@ -10,7 +10,7 @@ struct PaymentView: View {
     @State private var selectedPaymentMethod: PaymentMethod?
     @State private var error: String?
     @State private var showError = false
-    @State private var showCardForm = false
+    @State private var isCardFlipped = false
     
     let rental: LockerRental
     let location: LockerLocation
@@ -21,292 +21,234 @@ struct PaymentView: View {
     }
     
     let paymentMethods = [
-        PaymentMethod(name: "Credit/Debit Card", icon: "creditcard.fill", isSelected: true),
+        PaymentMethod(name: "Credit Card", icon: "creditcard.fill", isSelected: true),
         PaymentMethod(name: "Apple Pay", icon: "apple.logo", isSelected: false),
         PaymentMethod(name: "Account Balance", icon: "wallet.pass.fill", isSelected: false)
     ]
     
-    private var duration: String {
-        if isCompletingExistingRental, let startTime = rental.startTime {
-            // For existing rentals, calculate actual duration
-            let components = Calendar.current.dateComponents([.hour, .minute], from: startTime, to: Date())
-            let hours = components.hour ?? 0
-            let minutes = components.minute ?? 0
-            
-            return "\(hours) hour\(hours > 1 ? "s" : "") \(minutes) minute\(minutes > 1 ? "s" : "")"
-        } else if let plan = rental.plan {
-            // For new rentals with a plan
-            if let totalHours = plan.totalHours {
-                switch plan.duration {
-                case .hourly: return "\(totalHours) Hour\(totalHours > 1 ? "s" : "")"
-                case .daily: return "1 Day"
-                }
-            } else {
-                return plan.duration.rawValue
-            }
-        } else {
-            return "24 Hours"
-        }
-    }
-    
     private var totalPrice: Double {
-        // If completing an existing rental, use the precalculated price
         if isCompletingExistingRental {
             return rental.totalPrice ?? 0
         }
         
-        // For reservations, charge 2x hourly rate as prepayment
         if rental.rentalType == .reservation {
             return rental.size.basePrice * 2.0
         }
         
-        // For new direct rentals, calculate based on plan
         return rental.totalPrice ?? (rental.plan?.price ?? rental.size.basePrice) * 1.1
     }
     
-    private var checkoutTitle: String {
-        if isCompletingExistingRental {
-            return "Complete Payment"
-        } else if rental.rentalType == .reservation {
-            return "Reservation Prepayment"
-        } else {
-            return "Secure Checkout"
-        }
-    }
-    
-    private var checkoutSubtitle: String {
-        if isCompletingExistingRental {
-            return "Complete your rental payment"
-        } else if rental.rentalType == .reservation {
-            return "Pay 2x hourly rate to secure your reservation"
-        } else {
-            return "Complete your rental payment"
-        }
-    }
-    
     var body: some View {
-        VStack(spacing: 24) {
-            // Header
-            VStack(spacing: 8) {
-                Text(checkoutTitle)
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(AppColors.textPrimary)
-                
-                Text(checkoutSubtitle)
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.textSecondary)
-            }
-            .padding(.top, 20)
+        VStack(spacing: 20) {
+            // Simple Header
+            Text("Payment")
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(AppColors.textPrimary)
+                .padding(.top, 20)
             
             ScrollView {
-                VStack(spacing: 24) {
-                    // Order Summary
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Order Summary")
-                            .font(.headline)
-                            .foregroundColor(AppColors.textPrimary)
+                VStack(spacing: 20) {
+                    // Simple Order Summary
+                    VStack(spacing: 12) {
+                        HStack {
+                            Text("Total Amount")
+                                .font(.headline)
+                                .foregroundColor(AppColors.textSecondary)
+                            Spacer()
+                            Text("€\(String(format: "%.2f", totalPrice))")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(AppColors.textPrimary)
+                        }
                         
-                        VStack(alignment: .leading, spacing: 8) {
-                            OrderDetailRow(title: "Locker Shop", value: rental.shopName)
-                            OrderDetailRow(title: "Selected Size", value: "\(rental.size.rawValue) (\(rental.size.dimensions))")
-                            
-                            if !isCompletingExistingRental, let plan = rental.plan {
-                                OrderDetailRow(title: "Selected Plan", value: "\(plan.tier.rawValue) - \(plan.duration.rawValue)")
-                            }
-                            
-                            if rental.rentalType == .reservation {
-                                OrderDetailRow(title: "Prepayment", value: "2x Hourly Rate")
-                                OrderDetailRow(title: "Hourly Rate", value: "€\(String(format: "%.2f", rental.size.basePrice))")
-                            }
-                            
-                            OrderDetailRow(title: isCompletingExistingRental ? "Usage Time" : "Duration", value: duration)
-                            OrderDetailRow(title: "Total Amount", value: "€\(String(format: "%.2f", totalPrice))", isTotal: true)
+                        HStack {
+                            Text("\(rental.shopName) • \(rental.size.rawValue)")
+                                .font(.subheadline)
+                                .foregroundColor(AppColors.textSecondary)
+                            Spacer()
                         }
                     }
-                    .padding()
+                    .padding(20)
                     .background(AppColors.surface)
-                    .cornerRadius(12)
-                    .shadow(color: Color.black.opacity(0.05), radius: 10)
+                    .cornerRadius(16)
                     
-                    // Payment Methods
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Payment Method")
-                            .font(.headline)
-                            .foregroundColor(AppColors.textPrimary)
-                        
+                    // Simple Payment Methods
+                    VStack(spacing: 12) {
                         ForEach(paymentMethods) { method in
-                            PaymentMethodRow(method: method, isSelected: selectedPaymentMethod?.id == method.id) {
-                                withAnimation(.easeInOut(duration: 0.3)) {
-                                    selectedPaymentMethod = method
-                                    showCardForm = method.name == "Credit/Debit Card"
+                            Button(action: {
+                                selectedPaymentMethod = method
+                            }) {
+                                HStack {
+                                    Image(systemName: method.icon)
+                                        .font(.title3)
+                                        .foregroundColor(AppColors.textPrimary)
+                                    
+                                    Text(method.name)
+                                        .font(.body)
+                                        .foregroundColor(AppColors.textPrimary)
+                                    
+                                    Spacer()
+                                    
+                                    if selectedPaymentMethod?.id == method.id {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundColor(AppColors.primary)
+                                    }
                                 }
+                                .padding(16)
+                                .background(selectedPaymentMethod?.id == method.id ? AppColors.primary.opacity(0.1) : AppColors.surface)
+                                .cornerRadius(12)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(selectedPaymentMethod?.id == method.id ? AppColors.primary : Color.clear, lineWidth: 2)
+                                )
                             }
                         }
                     }
-                    .padding()
-                    .background(AppColors.surface)
-                    .cornerRadius(12)
-                    .shadow(color: Color.black.opacity(0.05), radius: 10)
                     
-                    // Credit Card Form with Animation
-                    if showCardForm && selectedPaymentMethod?.name == "Credit/Debit Card" {
-                        VStack(alignment: .leading, spacing: 20) {
-                            // Card Header with Animation
-                            HStack {
-                                Image(systemName: "creditcard.fill")
-                                    .foregroundColor(AppColors.secondary)
-                                    .font(.title2)
-                                    .rotationEffect(.degrees(showCardForm ? 0 : 180))
-                                    .animation(.spring(response: 0.8, dampingFraction: 0.6), value: showCardForm)
+                    // Credit Card with Flip Animation
+                    if selectedPaymentMethod?.name == "Credit Card" {
+                        VStack(spacing: 16) {
+                            // Credit Card
+                            ZStack {
+                                // Front of Card
+                                if !isCardFlipped {
+                                    CreditCardFront(
+                                        cardNumber: paymentDetails.cardNumber,
+                                        cardholderName: paymentDetails.cardholderName
+                                    )
+                                    .rotation3DEffect(.degrees(0), axis: (x: 0, y: 1, z: 0))
+                                }
                                 
-                                Text("Card Details")
-                                    .font(.headline)
-                                    .foregroundColor(AppColors.textPrimary)
-                                
-                                Spacer()
-                                
-                                Image(systemName: "lock.shield.fill")
-                                    .foregroundColor(AppColors.secondary)
-                                    .font(.title3)
-                                    .scaleEffect(showCardForm ? 1.0 : 0.8)
-                                    .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.2), value: showCardForm)
+                                // Back of Card
+                                if isCardFlipped {
+                                    CreditCardBack(
+                                        expiryDate: paymentDetails.expiryDate,
+                                        cvv: paymentDetails.cvv
+                                    )
+                                    .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
+                                }
                             }
-                            .padding(.bottom, 8)
-                            
-                            // Card Form Fields
-                            VStack(spacing: 18) {
-                                InputField(title: "CARDHOLDER NAME", text: $paymentDetails.cardholderName)
-                                    .transition(.asymmetric(
-                                        insertion: .move(edge: .leading).combined(with: .opacity),
-                                        removal: .move(edge: .trailing).combined(with: .opacity)
-                                    ))
-                                
-                                InputField(title: "CARD NUMBER", text: $paymentDetails.cardNumber)
-                                    .transition(.asymmetric(
-                                        insertion: .move(edge: .leading).combined(with: .opacity),
-                                        removal: .move(edge: .trailing).combined(with: .opacity)
-                                    ))
-                                    .animation(.easeInOut(duration: 0.4).delay(0.1), value: showCardForm)
-                                
-                                HStack(spacing: 16) {
-                                    InputField(title: "EXPIRY DATE", text: $paymentDetails.expiryDate)
-                                        .transition(.asymmetric(
-                                            insertion: .move(edge: .bottom).combined(with: .opacity),
-                                            removal: .move(edge: .top).combined(with: .opacity)
-                                        ))
-                                        .animation(.easeInOut(duration: 0.4).delay(0.2), value: showCardForm)
-                                    
-                                    InputField(title: "CVV", text: $paymentDetails.cvv, isSecure: true)
-                                        .transition(.asymmetric(
-                                            insertion: .move(edge: .bottom).combined(with: .opacity),
-                                            removal: .move(edge: .top).combined(with: .opacity)
-                                        ))
-                                        .animation(.easeInOut(duration: 0.4).delay(0.3), value: showCardForm)
+                            .frame(height: 200)
+                            .onTapGesture {
+                                withAnimation(.spring(response: 0.8, dampingFraction: 0.8)) {
+                                    isCardFlipped.toggle()
                                 }
                             }
                             
-                            // Security note with animation
-                            HStack {
-                                Image(systemName: "checkmark.shield.fill")
-                                    .foregroundColor(AppColors.secondary)
-                                    .font(.caption)
-                                    .scaleEffect(showCardForm ? 1.0 : 0.5)
-                                    .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.4), value: showCardForm)
-                                
-                                Text("Your payment information is encrypted and secure")
-                                    .font(.caption)
-                                    .foregroundColor(AppColors.textSecondary)
-                                    .opacity(showCardForm ? 1.0 : 0.0)
-                                    .animation(.easeInOut(duration: 0.3).delay(0.5), value: showCardForm)
+                            // Simple Input Fields
+                            if !isCardFlipped {
+                                VStack(spacing: 12) {
+                                    InputField(title: "Card Number", text: $paymentDetails.cardNumber, keyboardType: .numberPad)
+                                        .onChange(of: paymentDetails.cardNumber) { newValue in
+                                            // Only allow numbers and limit to 16 characters
+                                            let filtered = newValue.filter { $0.isNumber }
+                                            if filtered.count <= 16 {
+                                                paymentDetails.cardNumber = filtered
+                                            } else {
+                                                paymentDetails.cardNumber = String(filtered.prefix(16))
+                                            }
+                                        }
+                                    
+                                    InputField(title: "Cardholder Name", text: $paymentDetails.cardholderName, keyboardType: .alphabet)
+                                        .onChange(of: paymentDetails.cardholderName) { newValue in
+                                            // Only allow letters and spaces, limit to 30 characters
+                                            let filtered = newValue.filter { $0.isLetter || $0.isWhitespace }
+                                            if filtered.count <= 30 {
+                                                paymentDetails.cardholderName = filtered
+                                            } else {
+                                                paymentDetails.cardholderName = String(filtered.prefix(30))
+                                            }
+                                        }
+                                }
+                            } else {
+                                VStack(spacing: 12) {
+                                    HStack(spacing: 12) {
+                                        InputField(title: "MM/YY", text: $paymentDetails.expiryDate, keyboardType: .numberPad)
+                                            .onChange(of: paymentDetails.expiryDate) { newValue in
+                                                // Only allow numbers and format as MM/YY
+                                                let filtered = newValue.filter { $0.isNumber }
+                                                var formatted = ""
+                                                
+                                                for (index, character) in filtered.enumerated() {
+                                                    if index == 2 {
+                                                        formatted += "/"
+                                                    }
+                                                    if index < 4 {
+                                                        formatted += String(character)
+                                                    }
+                                                }
+                                                
+                                                paymentDetails.expiryDate = formatted
+                                            }
+                                        
+                                        InputField(title: "CVV", text: $paymentDetails.cvv, isSecure: true, keyboardType: .numberPad)
+                                            .onChange(of: paymentDetails.cvv) { newValue in
+                                                // Only allow numbers and limit to 3 characters
+                                                let filtered = newValue.filter { $0.isNumber }
+                                                if filtered.count <= 3 {
+                                                    paymentDetails.cvv = filtered
+                                                } else {
+                                                    paymentDetails.cvv = String(filtered.prefix(3))
+                                                }
+                                            }
+                                    }
+                                }
                             }
-                            .padding(.top, 8)
+                            
+                            Button(action: {
+                                withAnimation(.spring(response: 0.8, dampingFraction: 0.8)) {
+                                    isCardFlipped.toggle()
+                                }
+                            }) {
+                                Text(isCardFlipped ? "Edit Card Info" : "Enter Expiry & CVV")
+                                    .font(.subheadline)
+                                    .foregroundColor(AppColors.primary)
+                            }
                         }
-                        .padding(24)
-                        .background(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    AppColors.surface,
-                                    AppColors.surface.opacity(0.8)
-                                ]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .padding(20)
+                        .background(AppColors.surface)
                         .cornerRadius(16)
-                        .shadow(color: Color.black.opacity(0.1), radius: 15, x: 0, y: 8)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [
-                                            AppColors.secondary.opacity(0.5),
-                                            AppColors.secondary.opacity(0.2)
-                                        ]),
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1.5
-                                )
-                        )
-                        .rotation3DEffect(
-                            .degrees(showCardForm ? 0 : 90),
-                            axis: (x: 0, y: 1, z: 0),
-                            perspective: 0.5
-                        )
-                        .scaleEffect(showCardForm ? 1.0 : 0.8)
-                        .opacity(showCardForm ? 1.0 : 0.0)
-                        .animation(.spring(response: 0.8, dampingFraction: 0.7), value: showCardForm)
                     }
                 }
-                .padding(.vertical)
+                .padding(.horizontal, 20)
             }
             
-            // CTA Buttons
-            VStack(spacing: 16) {
+            // Simple Buttons
+            VStack(spacing: 12) {
                 Button(action: {
                     processPayment()
                 }) {
-                    if isProcessing {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .frame(height: 24)
-                    } else {
-                        HStack {
-                            Image(systemName: "creditcard.fill")
-                                .font(.system(size: 20))
-                            
-                            Text("Complete Payment")
+                    HStack {
+                        if isProcessing {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(0.8)
+                        } else {
+                            Text("Pay €\(String(format: "%.2f", totalPrice))")
                                 .fontWeight(.semibold)
-                            
-                            if !isProcessing {
-                                Image(systemName: "arrow.right")
-                                    .font(.system(size: 16))
-                            }
                         }
-                        .foregroundColor(Color.white)
                     }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(AppColors.primary)
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(AppColors.primary)
-                .cornerRadius(16)
-                .shadow(color: Color.black.opacity(0.2), radius: 5)
                 .disabled(isProcessing)
                 
                 Button(action: {
                     dismiss()
                 }) {
-                    Text("Go Back")
+                    Text("Cancel")
                         .fontWeight(.medium)
                         .foregroundColor(AppColors.textSecondary)
                         .padding(.vertical, 8)
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 50)  // Increased bottom padding for easier access
+            .padding(.bottom, 20)
         }
-        .padding(.horizontal, 24)
         .background(AppColors.background)
         .fullScreenCover(isPresented: $showConfirmation) {
             PaymentConfirmationView(rental: rental, location: location)
@@ -317,10 +259,7 @@ struct PaymentView: View {
             Text(error ?? "An error occurred")
         }
         .onAppear {
-            print("PaymentView appeared with rental: \(rental.id), startTime: \(String(describing: rental.startTime)), totalPrice: \(String(describing: rental.totalPrice))")
-            // Set default payment method
             selectedPaymentMethod = paymentMethods.first
-            showCardForm = selectedPaymentMethod?.name == "Credit/Debit Card"
         }
     }
     
@@ -333,77 +272,159 @@ struct PaymentView: View {
         
         isProcessing = true
         
-        // Simulate payment processing
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             isProcessing = false
             
             if rental.rentalType == .reservation {
-                // For reservations, create the reservation and go back to HomeView
                 createReservation()
             } else {
-                // For direct rentals, show confirmation screen after payment is processed
                 showConfirmation = true
             }
         }
     }
     
     private func createReservation() {
-        // Create reservation in Firebase (simplified for demo)
-        // In a real app, this would create a proper reservation document
-        
-        // Post notification to refresh home view
         NotificationCenter.default.post(name: Notification.Name("ReservationCreated"), object: rental)
-        
-        // Dismiss to home
         NotificationCenter.default.post(name: Notification.Name("DismissToRoot"), object: nil)
     }
 }
 
-struct OrderDetailRow: View {
-    let title: String
-    let value: String
-    var isTotal: Bool = false
+// Credit Card Front View
+struct CreditCardFront: View {
+    let cardNumber: String
+    let cardholderName: String
     
     var body: some View {
-        HStack {
-            Text(title)
-                .font(isTotal ? .headline : .subheadline)
-                .foregroundColor(isTotal ? AppColors.textPrimary : AppColors.textSecondary)
-            Spacer()
-            Text(value)
-                .font(isTotal ? .headline : .subheadline)
-                .fontWeight(isTotal ? .bold : .regular)
-                .foregroundColor(AppColors.textPrimary)
+        ZStack {
+            // Card Background
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.blue.opacity(0.8),
+                    Color.purple.opacity(0.8)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
+            
+            VStack(alignment: .leading, spacing: 20) {
+                HStack {
+                    Text("SMART LOCKER")
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    Spacer()
+                    Image(systemName: "creditcard.fill")
+                        .font(.title2)
+                        .foregroundColor(.white)
+                }
+                
+                Spacer()
+                
+                Text(cardNumber.isEmpty ? "•••• •••• •••• ••••" : formatCardNumber(cardNumber))
+                    .font(.title3)
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
+                    .tracking(2)
+                
+                HStack {
+                    Text(cardholderName.isEmpty ? "CARDHOLDER NAME" : cardholderName.uppercased())
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
+                    Spacer()
+                }
+            }
+            .padding(24)
         }
+    }
+    
+    private func formatCardNumber(_ number: String) -> String {
+        let cleaned = number.replacingOccurrences(of: " ", with: "")
+        var formatted = ""
+        
+        for (index, character) in cleaned.enumerated() {
+            if index > 0 && index % 4 == 0 {
+                formatted += " "
+            }
+            formatted += String(character)
+        }
+        
+        // Pad with dots if less than 16 digits
+        let remainingDigits = 16 - cleaned.count
+        if remainingDigits > 0 {
+            let groups = (remainingDigits + 3) / 4 // Calculate how many groups of 4 we need
+            for groupIndex in 0..<groups {
+                if !formatted.isEmpty {
+                    formatted += " "
+                }
+                let digitsInThisGroup = min(4, remainingDigits - (groupIndex * 4))
+                formatted += String(repeating: "•", count: digitsInThisGroup)
+            }
+        }
+        
+        return formatted
     }
 }
 
-struct PaymentMethodRow: View {
-    let method: PaymentMethod
-    let isSelected: Bool
-    let action: () -> Void
+// Credit Card Back View
+struct CreditCardBack: View {
+    let expiryDate: String
+    let cvv: String
     
     var body: some View {
-        Button(action: action) {
-            HStack {
-                Image(systemName: method.icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(AppColors.textPrimary)
-                Text(method.name)
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.textPrimary)
-                Spacer()
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(isSelected ? AppColors.primary : AppColors.textSecondary)
-            }
-            .padding()
-            .background(AppColors.surface)
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? AppColors.primary : AppColors.divider, lineWidth: 1)
+        ZStack {
+            // Card Background
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.blue.opacity(0.8),
+                    Color.purple.opacity(0.8)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
             )
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
+            
+            VStack(spacing: 16) {
+                // Magnetic Strip
+                Rectangle()
+                    .fill(Color.black)
+                    .frame(height: 40)
+                    .padding(.horizontal, -24)
+                    .padding(.top, 20)
+                
+                Spacer()
+                
+                HStack {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("VALID THRU")
+                            .font(.caption2)
+                            .foregroundColor(.white.opacity(0.8))
+                        Text(expiryDate.isEmpty ? "MM/YY" : expiryDate)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                    }
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .trailing, spacing: 8) {
+                        Text("CVV")
+                            .font(.caption2)
+                            .foregroundColor(.white.opacity(0.8))
+                        Text(cvv.isEmpty ? "•••" : cvv)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                    }
+                }
+                .padding(.bottom, 20)
+            }
+            .padding(.horizontal, 24)
         }
+        .scaleEffect(x: -1, y: 1) // Flip horizontally for back view
     }
 }
 

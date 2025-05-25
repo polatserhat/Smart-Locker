@@ -4,6 +4,7 @@ struct InputField: View {
     let title: String
     @Binding var text: String
     var isSecure: Bool = false
+    var keyboardType: UIKeyboardType = .default
     @FocusState private var isFocused: Bool
     @State private var isAnimating = false
     
@@ -34,6 +35,7 @@ struct InputField: View {
                         .foregroundColor(AppColors.textPrimary)
                         .focused($isFocused)
                         .font(.body)
+                        .keyboardType(keyboardType)
                 } else {
                     TextField("Enter \(title.lowercased())", text: $text)
                         .padding(.horizontal, 16)
@@ -41,6 +43,7 @@ struct InputField: View {
                         .foregroundColor(AppColors.textPrimary)
                         .focused($isFocused)
                         .font(.body)
+                        .keyboardType(keyboardType)
                 }
             }
             .scaleEffect(isFocused ? 1.02 : 1.0)
