@@ -62,6 +62,10 @@ struct LockerMapView: View {
         reservationDates != nil
     }
     
+    init(reservationDates: Set<Date>? = nil) {
+        self.reservationDates = reservationDates
+    }
+    
     var body: some View {
         ZStack {
             // Map with annotations
@@ -406,6 +410,9 @@ struct LockerMapView: View {
         }
         .onAppear {
             viewModel.fetchLockerLocations()
+            print("🗺️ LockerMapView appeared")
+            print("📅 Reservation dates: \(reservationDates?.description ?? "nil")")
+            print("🔄 Is reservation flow: \(isReservationFlow)")
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("RefreshLockerMap"))) { _ in
             print("🔄 Refreshing locker map...")
