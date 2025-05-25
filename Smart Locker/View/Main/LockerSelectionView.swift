@@ -26,16 +26,22 @@ struct LockerSizeCard: View {
                     .foregroundColor(AppColors.textSecondary)
                 
                 // Price
-                Text("€\(String(format: "%.2f", size.basePrice))")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(Color.white)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 12)
-                    .background(
-                        Capsule()
-                            .fill(isSelected ? AppColors.secondary : AppColors.primary)
-                    )
-                    .padding(.top, 6)
+                VStack(spacing: 4) {
+                    Text("Size Fee")
+                        .font(.caption2)
+                        .foregroundColor(.white.opacity(0.8))
+                    
+                    Text("€\(String(format: "%.2f", size.sizeFee))")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(Color.white)
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 12)
+                .background(
+                    Capsule()
+                        .fill(isSelected ? AppColors.secondary : AppColors.primary)
+                )
+                .padding(.top, 6)
             }
             .padding(.vertical, 20)
             .frame(maxWidth: .infinity)

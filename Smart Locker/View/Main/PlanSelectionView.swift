@@ -161,7 +161,7 @@ struct PlanSelectionView: View {
                 rental: rental,
                 duration: nil,
                 totalAmount: nil,
-                hourlyRate: rental.size.basePrice
+                hourlyRate: selectedTier.hourlyRate
             )
         }
         .alert("Error", isPresented: $showError) {

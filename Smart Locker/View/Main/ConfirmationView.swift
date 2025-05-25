@@ -44,6 +44,11 @@ struct PaymentConfirmationView: View {
             return "START RENTAL"
         }
     }
+    
+    // Get the hourly rate from the plan
+    private var hourlyRate: Double {
+        return rental.plan?.tier.hourlyRate ?? 2.99 // Default to standard rate
+    }
 
     var body: some View {
         VStack(spacing: 20) {
@@ -145,7 +150,7 @@ struct PaymentConfirmationView: View {
                             .font(.headline)
                             .foregroundColor(AppColors.textSecondary)
                         
-                        Text("€\(String(format: "%.2f", rental.size.basePrice))/hour")
+                        Text("€\(String(format: "%.2f", hourlyRate))/hour")
                             .font(.title3)
                             .fontWeight(.semibold)
                             .foregroundColor(AppColors.secondary)
@@ -225,12 +230,12 @@ struct PaymentConfirmationView: View {
                             Image(systemName: "creditcard")
                                 .foregroundColor(AppColors.secondary)
                             
-                            Text("€\(String(format: "%.2f", rental.size.basePrice * 2.0))")
+                            Text("€\(String(format: "%.2f", hourlyRate * 2.0 + rental.size.sizeFee))")
                                 .font(.title3)
                                 .fontWeight(.semibold)
                                 .foregroundColor(AppColors.textPrimary)
                             
-                            Text("(2x hourly rate)")
+                            Text("(2x hourly rate + size fee)")
                                 .font(.caption)
                                 .foregroundColor(AppColors.textSecondary)
                         }
@@ -341,7 +346,7 @@ struct PaymentConfirmationView: View {
                 rental: rental,
                 duration: isCompletingExistingRental ? calculateDuration(from: rental.startTime ?? Date(), to: Date()) : nil,
                 totalAmount: rental.totalPrice,
-                hourlyRate: rental.size.basePrice
+                hourlyRate: hourlyRate
             )
         }
         .fullScreenCover(isPresented: $showPayment) {

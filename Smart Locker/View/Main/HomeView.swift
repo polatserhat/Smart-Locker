@@ -130,7 +130,7 @@ struct HomeView: View {
             startTime: activeRental.startDate,
             endTime: Date(),
             status: .active,
-            totalPrice: calculateFinalPrice(startTime: activeRental.startDate, endTime: Date(), basePrice: activeRental.size == "Small" ? 0.10 : (activeRental.size == "Medium" ? 0.15 : 0.20))
+            totalPrice: calculateFinalPrice(startTime: activeRental.startDate, endTime: Date(), size: activeRental.size)
         )
         
         // Create a LockerLocation object
@@ -151,9 +151,24 @@ struct HomeView: View {
         self.showPayment = true
     }
     
-    private func calculateFinalPrice(startTime: Date, endTime: Date, basePrice: Double) -> Double {
+    private func calculateFinalPrice(startTime: Date, endTime: Date, size: String) -> Double {
         let totalHours = calculateTotalHours(from: startTime, to: endTime)
-        return max(basePrice * totalHours, basePrice) // Minimum of 1 hour
+        let hourlyRate = 2.99 // Default standard rate
+        let sizeFee = getSizeFee(for: size)
+        return (hourlyRate * totalHours) + sizeFee
+    }
+    
+    private func getSizeFee(for size: String) -> Double {
+        switch size.lowercased() {
+        case "small":
+            return 0.50
+        case "medium":
+            return 0.75
+        case "large":
+            return 1.00
+        default:
+            return 0.50
+        }
     }
     
     private func fetchLockerPricing(db: Firestore, lockerId: String, activeRental: Rental, endTime: Date, totalHours: Double) {

@@ -32,10 +32,18 @@ struct PaymentView: View {
         }
         
         if rental.rentalType == .reservation {
-            return rental.size.basePrice * 2.0
+            // For reservations, charge 2x hourly rate as prepayment + size fee
+            let hourlyRate = rental.plan?.tier.hourlyRate ?? 2.99 // Default to standard rate
+            return (hourlyRate * 2.0) + rental.size.sizeFee
         }
         
-        return rental.totalPrice ?? (rental.plan?.price ?? rental.size.basePrice) * 1.1
+        // For new direct rentals, calculate based on plan + size fee
+        let planPrice = rental.plan?.price ?? 2.99 // Default hourly rate
+        return planPrice + rental.size.sizeFee
+    }
+    
+    private var hourlyRate: Double {
+        return rental.plan?.tier.hourlyRate ?? 2.99 // Default to standard rate
     }
     
     var body: some View {
@@ -49,24 +57,72 @@ struct PaymentView: View {
             
             ScrollView {
                 VStack(spacing: 20) {
-                    // Simple Order Summary
+                    // Detailed Order Summary
                     VStack(spacing: 12) {
                         HStack {
-                            Text("Total Amount")
+                            Text("Order Summary")
                                 .font(.headline)
-                                .foregroundColor(AppColors.textSecondary)
-                            Spacer()
-                            Text("€\(String(format: "%.2f", totalPrice))")
-                                .font(.title2)
-                                .fontWeight(.bold)
                                 .foregroundColor(AppColors.textPrimary)
+                            Spacer()
                         }
                         
+                        Divider()
+                        
+                        // Location and Size
                         HStack {
                             Text("\(rental.shopName) • \(rental.size.rawValue)")
                                 .font(.subheadline)
                                 .foregroundColor(AppColors.textSecondary)
                             Spacer()
+                        }
+                        
+                        // Hourly Rate
+                        HStack {
+                            Text("Hourly Rate")
+                                .font(.body)
+                                .foregroundColor(AppColors.textSecondary)
+                            Spacer()
+                            Text("€\(String(format: "%.2f", hourlyRate))/hour")
+                                .font(.body)
+                                .foregroundColor(AppColors.textPrimary)
+                        }
+                        
+                        // Duration (for reservations)
+                        if rental.rentalType == .reservation {
+                            HStack {
+                                Text("Duration (Prepaid)")
+                                    .font(.body)
+                                    .foregroundColor(AppColors.textSecondary)
+                                Spacer()
+                                Text("2 hours")
+                                    .font(.body)
+                                    .foregroundColor(AppColors.textPrimary)
+                            }
+                        }
+                        
+                        // Size Fee
+                        HStack {
+                            Text("Size Fee")
+                                .font(.body)
+                                .foregroundColor(AppColors.textSecondary)
+                            Spacer()
+                            Text("€\(String(format: "%.2f", rental.size.sizeFee))")
+                                .font(.body)
+                                .foregroundColor(AppColors.textPrimary)
+                        }
+                        
+                        Divider()
+                        
+                        // Total
+                        HStack {
+                            Text("Total Amount")
+                                .font(.headline)
+                                .foregroundColor(AppColors.textPrimary)
+                            Spacer()
+                            Text("€\(String(format: "%.2f", totalPrice))")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(AppColors.primary)
                         }
                     }
                     .padding(20)

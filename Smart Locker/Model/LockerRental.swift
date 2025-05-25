@@ -36,12 +36,18 @@ enum LockerSize: String, Codable {
         }
     }
     
-    var basePrice: Double {
+    var sizeFee: Double {
         switch self {
         case .small: return 0.50
         case .medium: return 0.75
         case .large: return 1.00
         }
+    }
+    
+    // Keep basePrice for backward compatibility but mark as deprecated
+    @available(*, deprecated, message: "Use sizeFee instead")
+    var basePrice: Double {
+        return sizeFee
     }
 }
 
