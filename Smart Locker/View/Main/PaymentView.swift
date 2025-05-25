@@ -10,6 +10,7 @@ struct PaymentView: View {
     @State private var selectedPaymentMethod: PaymentMethod?
     @State private var error: String?
     @State private var showError = false
+    @State private var showCardForm = false
     
     let rental: LockerRental
     let location: LockerLocation
@@ -113,7 +114,10 @@ struct PaymentView: View {
                         
                         ForEach(paymentMethods) { method in
                             PaymentMethodRow(method: method, isSelected: selectedPaymentMethod?.id == method.id) {
-                                selectedPaymentMethod = method
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    selectedPaymentMethod = method
+                                    showCardForm = method.name == "Credit/Debit Card"
+                                }
                             }
                         }
                     }
@@ -122,27 +126,114 @@ struct PaymentView: View {
                     .cornerRadius(12)
                     .shadow(color: Color.black.opacity(0.05), radius: 10)
                     
-                    // Credit Card Form
-                    if selectedPaymentMethod?.name == "Credit/Debit Card" {
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("Card Details")
-                                .font(.headline)
-                                .foregroundColor(AppColors.textPrimary)
-                            
-                            VStack(spacing: 16) {
-                                InputField(title: "CARDHOLDER NAME", text: $paymentDetails.cardholderName)
-                                InputField(title: "CARD NUMBER", text: $paymentDetails.cardNumber)
+                    // Credit Card Form with Animation
+                    if showCardForm && selectedPaymentMethod?.name == "Credit/Debit Card" {
+                        VStack(alignment: .leading, spacing: 20) {
+                            // Card Header with Animation
+                            HStack {
+                                Image(systemName: "creditcard.fill")
+                                    .foregroundColor(AppColors.secondary)
+                                    .font(.title2)
+                                    .rotationEffect(.degrees(showCardForm ? 0 : 180))
+                                    .animation(.spring(response: 0.8, dampingFraction: 0.6), value: showCardForm)
                                 
-                                HStack(spacing: 12) {
+                                Text("Card Details")
+                                    .font(.headline)
+                                    .foregroundColor(AppColors.textPrimary)
+                                
+                                Spacer()
+                                
+                                Image(systemName: "lock.shield.fill")
+                                    .foregroundColor(AppColors.secondary)
+                                    .font(.title3)
+                                    .scaleEffect(showCardForm ? 1.0 : 0.8)
+                                    .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.2), value: showCardForm)
+                            }
+                            .padding(.bottom, 8)
+                            
+                            // Card Form Fields
+                            VStack(spacing: 18) {
+                                InputField(title: "CARDHOLDER NAME", text: $paymentDetails.cardholderName)
+                                    .transition(.asymmetric(
+                                        insertion: .move(edge: .leading).combined(with: .opacity),
+                                        removal: .move(edge: .trailing).combined(with: .opacity)
+                                    ))
+                                
+                                InputField(title: "CARD NUMBER", text: $paymentDetails.cardNumber)
+                                    .transition(.asymmetric(
+                                        insertion: .move(edge: .leading).combined(with: .opacity),
+                                        removal: .move(edge: .trailing).combined(with: .opacity)
+                                    ))
+                                    .animation(.easeInOut(duration: 0.4).delay(0.1), value: showCardForm)
+                                
+                                HStack(spacing: 16) {
                                     InputField(title: "EXPIRY DATE", text: $paymentDetails.expiryDate)
+                                        .transition(.asymmetric(
+                                            insertion: .move(edge: .bottom).combined(with: .opacity),
+                                            removal: .move(edge: .top).combined(with: .opacity)
+                                        ))
+                                        .animation(.easeInOut(duration: 0.4).delay(0.2), value: showCardForm)
+                                    
                                     InputField(title: "CVV", text: $paymentDetails.cvv, isSecure: true)
+                                        .transition(.asymmetric(
+                                            insertion: .move(edge: .bottom).combined(with: .opacity),
+                                            removal: .move(edge: .top).combined(with: .opacity)
+                                        ))
+                                        .animation(.easeInOut(duration: 0.4).delay(0.3), value: showCardForm)
                                 }
                             }
+                            
+                            // Security note with animation
+                            HStack {
+                                Image(systemName: "checkmark.shield.fill")
+                                    .foregroundColor(AppColors.secondary)
+                                    .font(.caption)
+                                    .scaleEffect(showCardForm ? 1.0 : 0.5)
+                                    .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.4), value: showCardForm)
+                                
+                                Text("Your payment information is encrypted and secure")
+                                    .font(.caption)
+                                    .foregroundColor(AppColors.textSecondary)
+                                    .opacity(showCardForm ? 1.0 : 0.0)
+                                    .animation(.easeInOut(duration: 0.3).delay(0.5), value: showCardForm)
+                            }
+                            .padding(.top, 8)
                         }
-                        .padding()
-                        .background(AppColors.surface)
-                        .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.05), radius: 10)
+                        .padding(24)
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    AppColors.surface,
+                                    AppColors.surface.opacity(0.8)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .cornerRadius(16)
+                        .shadow(color: Color.black.opacity(0.1), radius: 15, x: 0, y: 8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            AppColors.secondary.opacity(0.5),
+                                            AppColors.secondary.opacity(0.2)
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1.5
+                                )
+                        )
+                        .rotation3DEffect(
+                            .degrees(showCardForm ? 0 : 90),
+                            axis: (x: 0, y: 1, z: 0),
+                            perspective: 0.5
+                        )
+                        .scaleEffect(showCardForm ? 1.0 : 0.8)
+                        .opacity(showCardForm ? 1.0 : 0.0)
+                        .animation(.spring(response: 0.8, dampingFraction: 0.7), value: showCardForm)
                     }
                 }
                 .padding(.vertical)
@@ -204,6 +295,9 @@ struct PaymentView: View {
         }
         .onAppear {
             print("PaymentView appeared with rental: \(rental.id), startTime: \(String(describing: rental.startTime)), totalPrice: \(String(describing: rental.totalPrice))")
+            // Set default payment method
+            selectedPaymentMethod = paymentMethods.first
+            showCardForm = selectedPaymentMethod?.name == "Credit/Debit Card"
         }
     }
     
@@ -295,3 +389,4 @@ struct PaymentMethodRow: View {
     )
     .environmentObject(AuthViewModel())
 } 
+
