@@ -50,8 +50,8 @@ struct OnboardingView: View {
                                     Image(steps[index].image)
                                         .resizable()
                                         .scaledToFit()
-                                        .frame(width: geometry.size.width * 0.85)
-                                        .padding(.bottom, 20)
+                                        .frame(width: geometry.size.width * 0.95)
+                                        .padding(.bottom, 12)
 
                                     VStack(spacing: 8) {
                                         Text(steps[index].title)
