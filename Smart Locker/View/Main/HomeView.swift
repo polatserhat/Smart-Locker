@@ -190,14 +190,6 @@ struct HomeView: View {
                 
                 let finalPrice = max(hourlyRate * totalHours, hourlyRate) // Minimum of 1 hour
                 
-                // Format price for display
-                let formatter = NumberFormatter()
-                formatter.numberStyle = .currency
-                formatter.maximumFractionDigits = 2
-                
-                let priceString = formatter.string(from: NSNumber(value: finalPrice)) ?? "€\(String(format: "%.2f", finalPrice))"
-                let hoursString = String(format: "%.1f", totalHours)
-                
                 // Perform the update operations
                 completeRentalEnd(db: db, activeRental: activeRental, endTime: endTime, finalPrice: finalPrice, totalHours: totalHours)
             }
